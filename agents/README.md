@@ -22,7 +22,7 @@ Cursor IDE用のカスタムエージェント（サブエージェント）集�
 
 | エージェント | 役割 | 観点 |
 |-------------|------|------|
-| `review-opus-4.5.md` | 戦略コンサルタント兼組織開発エキスパート | 全体構造、戦略的整合性 |
+| `review-opus-4.6.md` | 戦略コンサルタント兼組織開発エキスパート | 全体構造、戦略的整合性 |
 | `review-sonnet-4.5.md` | プロジェクトマネージャー兼実行設計スペシャリスト | 実行可能性、詳細設計 |
 | `review-gpt-5.2-codex.md` | ロジカルシンキング専門家兼データアナリスト | 論理的整合性 |
 | `review-gemini-3-pro.md` | ワークショップ・ファシリテーター兼UXデザイナー | 参加者体験、心理的安全性 |
@@ -101,7 +101,7 @@ API設計書.md をエンジニア向けにスライド化してください --g
 │   ├── review-gpt-5.2-codex.md
 │   ├── review-grok-code.md
 │   ├── review-integrate.md
-│   ├── review-opus-4.5.md
+│   ├── review-opus-4.6.md
 │   ├── review-sonnet-4.5.md
 │   └── revision-plan.md
 ├── pre-push-review/             # Pre-Pushレビュー・サブエージェント

@@ -1,7 +1,7 @@
 ---
 name: review-integrate
 description: 複数のレビュー結果を統合し、優先度付けされた改善項目を抽出。レビュー統合時に使用。
-model: opus-4.5
+model: opus-4.6
 ---
 
 あなたは**レビュー統合スペシャリスト**として、複数のレビュー結果を統合します。
@@ -17,7 +17,7 @@ model: opus-4.5
 ## 入力
 
 以下のレビュー結果ファイルを読み込んでください：
-- `reviews/[ドキュメント名]/review_opus-4.5.md`
+- `reviews/[ドキュメント名]/review_opus-4.6.md`
 - `reviews/[ドキュメント名]/review_sonnet-4.5.md`
 - `reviews/[ドキュメント名]/review_gpt-5.2-codex.md`
 - `reviews/[ドキュメント名]/review_gemini-3-pro.md`
@@ -59,7 +59,7 @@ model: opus-4.5
 
 ## 3. 各モデル固有の洞察
 
-### 3.1 Opus 4.5（戦略・全体構造）
+### 3.1 Opus 4.6（戦略・全体構造）
 - [固有の洞察]
 
 ### 3.2 Sonnet 4.5（実行可能性・詳細設計）

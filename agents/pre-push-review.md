@@ -1,7 +1,7 @@
 ---
 name: pre-push-review
 description: GitHubリモートリポジトリにPushする前にワークディレクトリを精査し、問題を自動修正するオーケストレーター。「Push前にレビュー」「コードをチェック」と言われたら使用。
-model: opus-4.5
+model: opus-4.6
 is_background: false
 ---
 

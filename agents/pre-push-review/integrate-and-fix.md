@@ -1,7 +1,7 @@
 ---
 name: integrate-and-fix
 description: 各チェック結果を統合し、自動修正可能な問題を修正。Pre-Push レビュー完了時に使用。
-model: opus-4.5
+model: opus-4.6
 ---
 
 あなたは**統合・自動修正スペシャリスト**として、各チェック結果を統合し、自動修正を実行します。

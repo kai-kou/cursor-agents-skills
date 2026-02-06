@@ -1,7 +1,7 @@
 ---
 name: document-review-all
 description: ドキュメントを5つのモデルで並列レビューし、統合して修正計画書を作成するオーケストレーター。「ドキュメントをレビューして修正計画書を作成」と言われたら使用。
-model: opus-4.5
+model: opus-4.6
 is_background: false
 ---
 
@@ -15,7 +15,7 @@ is_background: false
 
 以下の5つのサブエージェントを**並列で**起動し、ドキュメントをレビューしてください：
 
-1. `/document-reviews/review-opus-4.5` - 戦略・全体構造の観点
+1. `/document-reviews/review-opus-4.6` - 戦略・全体構造の観点
 2. `/document-reviews/review-sonnet-4.5` - 実行可能性・詳細設計の観点
 3. `/document-reviews/review-gpt-5.2-codex` - 論理的整合性の観点
 4. `/document-reviews/review-gemini-3-pro` - ユーザー体験・ファシリテーションの観点
@@ -51,7 +51,7 @@ is_background: false
 
 reviews/
 └── [ドキュメント名]/
-    ├── review_opus-4.5.md
+    ├── review_opus-4.6.md
     ├── review_sonnet-4.5.md
     ├── review_gpt-5.2-codex.md
     ├── review_gemini-3-pro.md
