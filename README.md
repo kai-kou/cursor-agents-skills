@@ -37,7 +37,7 @@ Cursor の Task ツールで呼び出せるカスタムサブエージェント�
 |-------------|------|
 | `document-review-all.md` | 5つのAIモデルで並列レビューし、修正計画書を作成 |
 | `pre-push-review.md` | Push前にセキュリティ・品質・依存関係をチェック |
-| `slide-generator.md` | ドキュメントから対象ユーザー向けMarpスライドを作成 |
+| `slide-generator.md` | ドキュメントから対象ユーザー向けスライド画像を作成 |
 
 詳細は [agents/README.md](agents/README.md) を参照してください。
 

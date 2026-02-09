@@ -14,7 +14,7 @@ Cursor IDE用のカスタムエージェント（サブエージェント）集�
 |-------------|------|--------|
 | `document-review-all.md` | 5つのAIモデルで並列レビューし、統合して修正計画書を作成 | 「ドキュメントをレビューして修正計画書を作成」 |
 | `pre-push-review.md` | Push前にセキュリティ・品質・依存関係をチェック | 「Push前にレビュー」「コードをチェック」 |
-| `slide-generator.md` | ドキュメントから対象ユーザー向けMarpスライドを作成 | 「スライドを作成」「プレゼン資料を作成」 |
+| `slide-generator.md` | ドキュメントから対象ユーザー向けスライド画像を作成 | 「スライドを作成」「プレゼン資料を作成」 |
 | `project-manager.md` | プロジェクトのライフサイクル管理（作成・タスク・マイルストーン） | 「新規プロジェクト作成」「タスク追加」「ステータス変更」 |
 | `project-analyzer.md` | プロジェクト横断分析・ダッシュボード生成・レポート作成 | 「ダッシュボード更新」「週次レビュー」「今日のタスク」 |
 | `mtg-reporter.md` | MTG進捗報告サマリーの自動生成（定量+定性） | 「MTG報告を作成」「進捗報告」 |
@@ -53,8 +53,8 @@ Cursor IDE用のカスタムエージェント（サブエージェント）集�
 | エージェント | 役割 | 機能 |
 |-------------|------|------|
 | `analyze-document.md` | ドキュメント分析スペシャリスト | 要点抽出・スライド構成案作成 |
-| `create-marp-slides.md` | Marpスライドクリエイター | 16:9最適化されたMarpスライド作成 |
-| `google-slides-creator.md` | Googleスライドクリエイター | インフォグラフィック画像からGoogleスライド作成 |
+| `create-slide-outline.md` | スライド構成クリエイター | 各スライドの構成設計・画像生成プロンプト作成 |
+| `google-slides-creator.md` | Googleスライドクリエイター | スライド画像からPPTX生成・Google Driveアップロード |
 
 ### プロジェクト分析・サブエージェント
 
@@ -129,7 +129,7 @@ API設計書.md をエンジニア向けにスライド化してください --g
 │   └── security-check.md
 ├── slide-generator/             # スライド作成・サブエージェント
 │   ├── analyze-document.md
-│   ├── create-marp-slides.md
+│   ├── create-slide-outline.md
 │   └── google-slides-creator.md
 └── project-analyzer/            # プロジェクト分析・サブエージェント
     ├── scan-project.md
