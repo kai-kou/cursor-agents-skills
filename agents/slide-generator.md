@@ -94,13 +94,14 @@ description: 指定されたドキュメントから特定のユーザー向け�
 `--google-slides` オプションが有効な場合：
 
 1. `/slide-generator/google-slides-creator` サブエージェントを起動
-2. **rclone**を使用して画像をGoogle Driveに自動アップロード
-3. アップロードした画像からGoogleスライドを作成
-4. スライドURLを返却
+2. スライド画像をPILで最適化（PNG→JPEG変換＋リサイズ＋品質制御）してPPTXファイルを生成
+3. ファイルサイズが80MBを超える場合は自動分割（Google Slides変換制限100MBへの対応）
+4. **rclone**を使用してPPTXファイルをGoogle Driveにアップロード
+5. ユーザーにGoogleスライドへの変換手順を案内（Google DriveでPPTXを開くだけ）
 
-**前提条件**: rcloneがインストール・設定済みであること（`rclone config` でGoogle Drive連携済み）
+**前提条件**: rcloneがインストール・設定済み + Python（python-pptx, Pillow）が利用可能であること
 
-**出力**: Googleスライドへのリンク + Google Drive上の画像フォルダ
+**出力**: Google Drive上のPPTXファイル + Googleスライド変換手順の案内
 
 ## 実行例
 
@@ -124,8 +125,8 @@ description: 指定されたドキュメントから特定のユーザー向け�
 
 → Step 1-3: 通常ワークフロー
 → Step 4: スライド画像生成
-→ Step 5: Googleスライド作成
-→ 完了: Googleスライドへのリンク
+→ Step 5: PPTX生成＆Googleスライド変換案内
+→ 完了: Google Drive上のPPTXファイル + 変換手順
 ```
 
 ## 出力ファイル構成
@@ -146,9 +147,11 @@ description: 指定されたドキュメントから特定のユーザー向け�
 ### Google Drive（--google-slides オプション使用時）
 
 ```
-gdrive:SlideImages/[ドキュメント名]/
-├── slide_[ドキュメント名]_01.png
-├── slide_[ドキュメント名]_02.png
+gdrive:Presentations/[ドキュメント名]/
+├── [ドキュメント名].pptx                    ← PPTXファイル（100MB以下の場合）
+│   または
+├── [ドキュメント名]_part1.pptx              ← 分割PPTXファイル（100MB超過の場合）
+├── [ドキュメント名]_part2.pptx
 └── ...
 ```
 
@@ -160,8 +163,9 @@ gdrive:SlideImages/[ドキュメント名]/
 - 「Step 2完了: スライド構成を作成しました（Z枚分）」
 - 「Step 3完了: レビュー＆修正が完了しました」
 - 「Step 4完了: スライド画像を生成しました（N枚）」
-- 「Step 5完了: Googleスライドを作成しました → [URL]」
-  - 「画像アップロード先: gdrive:SlideImages/[ドキュメント名]/」
+- 「Step 5完了: PPTXファイルをGoogle Driveにアップロードしました」
+  - 「アップロード先: gdrive:Presentations/[ドキュメント名]/」
+  - 「Google DriveでPPTXファイルを開き『Google スライドで開く』をクリックしてください」
 
 ## エラーハンドリング
 
@@ -169,7 +173,7 @@ gdrive:SlideImages/[ドキュメント名]/
 - スライド枚数が過剰な場合: ユーザーに確認を取る
 - 画像生成に失敗した場合: エラーを報告し、該当スライドの再生成を試みる。3回失敗した場合はスキップして次へ進む
 - rcloneが未設定の場合: セットアップ手順を案内し、手動アップロードの代替案を提示
-- Google Driveアップロード失敗時: ローカル画像パスを提示し、手動でのGoogleスライド作成手順を案内
+- Google Driveアップロード失敗時: ローカルPPTXファイルパスを提示し、手動アップロードの代替手順を案内
 
 ## デザインスタイルガイド
 

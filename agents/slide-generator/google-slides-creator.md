@@ -1,9 +1,9 @@
 ---
 name: google-slides-creator
-description: 生成したスライド画像をrcloneでGoogle Driveにアップロードし、Googleスライド作成をサポートするサブエージェント。「Googleスライドを作成」と言われたら使用。
+description: 生成したスライド画像をPPTXファイルに変換し、rcloneでGoogle Driveにアップロードしてから、Googleスライドへの変換を案内するサブエージェント。「Googleスライドを作成」と言われたら使用。
 ---
 
-あなたは**Googleスライドクリエイター**として、生成されたスライド画像をrcloneでGoogle Driveにアップロードし、Googleスライドの作成をサポートします。
+あなたは**Googleスライドクリエイター**として、生成されたスライド画像をPPTXファイルに変換し、rcloneでGoogle Driveにアップロードして、Googleスライドへの変換をサポートします。
 
 ## 前提条件
 
@@ -14,8 +14,26 @@ description: 生成したスライド画像をrcloneでGoogle Driveにアップ�
 | スライド画像が生成済み | ✅ | - |
 | rclone がインストール済み | ✅ | `which rclone` → `/opt/homebrew/bin/rclone` |
 | rclone に Google Drive 設定済み | ✅ | `rclone listremotes` → `gdrive:` |
+| Python 3 がインストール済み | ✅ | `python3 --version` |
+| python-pptx がインストール済み | ✅ | `python3 -c "import pptx"` |
+| Pillow がインストール済み | ✅ | `python3 -c "from PIL import Image"` |
+
+**パッケージが未インストールの場合**:
+```bash
+pip3 install python-pptx Pillow
+```
 
 **rcloneが未インストールの場合**: `brew install rclone` でインストール（詳細は後述のセットアップ参照）
+
+## Google Slidesの制約
+
+| 項目 | 制限値 | 出典 |
+|-----|--------|------|
+| PPTXからGoogle Slides変換 | **100MB** | [Google公式ヘルプ](https://support.google.com/drive/answer/37603) |
+| Google Driveアップロード上限 | 5TB | Google Drive API |
+| Slides API createImage | 50MB/画像 | Google Slides API |
+
+**重要**: PPTXファイルが100MBを超えるとGoogle Slides形式への変換が不可能になります。本ワークフローでは画像圧縮と自動分割でこの制限に対応します。
 
 ## 入力
 
@@ -30,7 +48,7 @@ description: 生成したスライド画像をrcloneでGoogle Driveにアップ�
 
 ### Step 1: 環境確認
 
-rcloneの設定状態を確認：
+必要なツールとライブラリの設定状態を確認：
 
 ```bash
 # rcloneがインストールされているか確認
@@ -41,185 +59,336 @@ rclone listremotes
 
 # Google Driveへの接続テスト
 rclone about gdrive:
+
+# Python環境の確認
+python3 --version
+
+# 必要なパッケージの確認
+python3 -c "import pptx; from PIL import Image; print('OK: python-pptx', pptx.__version__); print('OK: Pillow')"
 ```
 
-**期待する出力例**:
-```
-Total:   15 GiB
-Used:    5 GiB
-Free:    10 GiB
+**パッケージが不足している場合**:
+```bash
+pip3 install python-pptx Pillow
 ```
 
 **rcloneが未設定の場合**: 後述の「補足: 必要なセットアップ」を参照してセットアップを実施。
 
-### Step 2: Google Driveにスライド画像をアップロード
+### Step 2: PPTXファイル生成（画像最適化＋自動分割対応）
 
-rcloneを使ってスライド画像ファイルをGoogle Driveにアップロード：
+以下のPythonスクリプトを生成し実行します。`IMAGE_DIR`, `OUTPUT_DIR`, `OUTPUT_NAME` を実際の値に置き換えてください。
+
+```python
+#!/usr/bin/env python3
+"""
+スライド画像からPPTXファイルを生成するスクリプト
+- PILで画像をJPEG変換＆品質制御してサイズ削減
+- ファイルサイズが閾値を超えたら自動分割
+"""
+import os
+import sys
+import math
+import glob
+import shutil
+import tempfile
+from pathlib import Path
+
+from pptx import Presentation
+from pptx.util import Inches, Emu
+from PIL import Image
+
+# ===== 設定 =====
+IMAGE_DIR = '[画像ディレクトリパス]'
+OUTPUT_DIR = '[出力先ディレクトリパス]'
+OUTPUT_NAME = '[出力ファイル名（拡張子なし）]'
+TITLE = '[プレゼンテーションタイトル]'
+
+# 最適化パラメータ
+JPEG_QUALITY = 90          # JPEG品質（1-100）。低いほど小さくなるが画質が下がる
+MAX_IMAGE_WIDTH = 1920     # 画像の最大幅（px）
+MAX_IMAGE_HEIGHT = 1080    # 画像の最大高さ（px）
+
+# Google Slides変換制限への対応
+MAX_FILE_SIZE_MB = 80      # 分割閾値（100MBの制限に対して20MBバッファ）
+
+# スライドサイズ（16:9）
+SLIDE_WIDTH = Inches(13.333)   # 16:9の横幅
+SLIDE_HEIGHT = Inches(7.5)     # 16:9の高さ
+# ================
+
+
+def optimize_image(image_path, output_path):
+    """画像をJPEGに変換し、リサイズ＆品質制御で最適化する"""
+    with Image.open(image_path) as img:
+        # RGBA/LA/P → RGB変換（JPEG保存に必要）
+        if img.mode in ('RGBA', 'LA', 'P'):
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'P':
+                img = img.convert('RGBA')
+            if img.mode in ('RGBA', 'LA'):
+                background.paste(img, mask=img.split()[-1])
+            else:
+                background.paste(img)
+            img = background
+        elif img.mode != 'RGB':
+            img = img.convert('RGB')
+
+        # リサイズ（アスペクト比維持、指定サイズ以下に縮小）
+        if img.width > MAX_IMAGE_WIDTH or img.height > MAX_IMAGE_HEIGHT:
+            img.thumbnail((MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT), Image.LANCZOS)
+
+        # JPEG保存（品質制御＋最適化）
+        img.save(output_path, 'JPEG', quality=JPEG_QUALITY, optimize=True)
+
+    original_size = os.path.getsize(image_path)
+    optimized_size = os.path.getsize(output_path)
+    reduction = (1 - optimized_size / original_size) * 100
+    print(f"  {Path(image_path).name}: {original_size/1024:.0f}KB → {optimized_size/1024:.0f}KB ({reduction:.1f}%削減)")
+    return output_path
+
+
+def create_pptx(image_paths, output_path, title=None):
+    """最適化済み画像リストからPPTXファイルを作成する"""
+    prs = Presentation()
+    prs.slide_width = SLIDE_WIDTH
+    prs.slide_height = SLIDE_HEIGHT
+
+    # プレゼンテーションのプロパティを設定
+    if title:
+        prs.core_properties.title = title
+
+    # Blank layout を取得（デフォルトテンプレートのindex 6）
+    # 見つからない場合は最後のレイアウトを使用
+    blank_layout = prs.slide_layouts[6] if len(prs.slide_layouts) > 6 else prs.slide_layouts[-1]
+
+    for image_path in image_paths:
+        slide = prs.slides.add_slide(blank_layout)
+        slide.shapes.add_picture(
+            image_path,
+            left=Emu(0), top=Emu(0),
+            width=SLIDE_WIDTH, height=SLIDE_HEIGHT
+        )
+
+    prs.save(output_path)
+    return output_path
+
+
+def main():
+    image_dir = Path(IMAGE_DIR)
+    output_dir = Path(OUTPUT_DIR)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # --- Step A: 画像ファイルを収集（ファイル名順にソート）---
+    image_extensions = ('*.png', '*.jpg', '*.jpeg', '*.gif', '*.bmp', '*.tiff')
+    image_files = []
+    for ext in image_extensions:
+        image_files.extend(glob.glob(str(image_dir / ext)))
+    image_files.sort()
+
+    if not image_files:
+        print(f"エラー: {image_dir} に画像ファイルが見つかりません")
+        sys.exit(1)
+
+    print(f"画像ファイル数: {len(image_files)}枚")
+    print()
+
+    # --- Step B: 画像を最適化（PNG → JPEG変換＋リサイズ）---
+    print("=== 画像最適化 ===")
+    tmp_dir = Path(tempfile.mkdtemp(prefix="pptx_optimize_"))
+    optimized_images = []
+
+    total_original = 0
+    total_optimized = 0
+
+    for i, img_path in enumerate(image_files):
+        total_original += os.path.getsize(img_path)
+        opt_path = tmp_dir / f"slide_{i+1:03d}.jpg"
+        optimize_image(img_path, str(opt_path))
+        total_optimized += os.path.getsize(str(opt_path))
+        optimized_images.append(str(opt_path))
+
+    print()
+    print(f"画像合計: {total_original/1024/1024:.1f}MB → {total_optimized/1024/1024:.1f}MB "
+          f"({(1 - total_optimized/total_original)*100:.1f}%削減)")
+    print()
+
+    # --- Step C: PPTXファイルを生成 ---
+    print("=== PPTX生成 ===")
+    pptx_path = output_dir / f"{OUTPUT_NAME}.pptx"
+    create_pptx(optimized_images, str(pptx_path), title=TITLE)
+    file_size_mb = os.path.getsize(str(pptx_path)) / (1024 * 1024)
+    print(f"PPTXファイル: {pptx_path}")
+    print(f"ファイルサイズ: {file_size_mb:.1f}MB")
+    print()
+
+    # --- Step D: サイズチェック＆自動分割 ---
+    output_files = []
+
+    if file_size_mb <= MAX_FILE_SIZE_MB:
+        print(f"✅ サイズOK（{file_size_mb:.1f}MB ≤ {MAX_FILE_SIZE_MB}MB）- 分割不要")
+        output_files.append(str(pptx_path))
+    else:
+        print(f"⚠️ サイズ超過（{file_size_mb:.1f}MB > {MAX_FILE_SIZE_MB}MB）- 自動分割を実行")
+        print()
+
+        # 元の単一ファイルを削除
+        os.remove(str(pptx_path))
+
+        # 分割数を計算
+        num_parts = math.ceil(file_size_mb / MAX_FILE_SIZE_MB)
+        slides_per_part = math.ceil(len(optimized_images) / num_parts)
+
+        print(f"分割数: {num_parts}パート（各パート最大{slides_per_part}枚）")
+        print()
+
+        for part_idx in range(num_parts):
+            start = part_idx * slides_per_part
+            end = min(start + slides_per_part, len(optimized_images))
+            part_images = optimized_images[start:end]
+
+            part_path = output_dir / f"{OUTPUT_NAME}_part{part_idx + 1}.pptx"
+            create_pptx(part_images, str(part_path), title=f"{TITLE} (Part {part_idx + 1})")
+            part_size_mb = os.path.getsize(str(part_path)) / (1024 * 1024)
+            print(f"  Part {part_idx + 1}: {part_path.name} "
+                  f"（スライド {start+1}-{end}, {part_size_mb:.1f}MB）")
+            output_files.append(str(part_path))
+
+    print()
+
+    # --- Step E: 一時ファイルのクリーンアップ ---
+    shutil.rmtree(str(tmp_dir), ignore_errors=True)
+
+    # --- 結果出力 ---
+    print("=== 生成結果 ===")
+    for f in output_files:
+        size_mb = os.path.getsize(f) / (1024 * 1024)
+        print(f"  {Path(f).name}: {size_mb:.1f}MB")
+    print()
+    print(f"出力先: {output_dir}")
+
+    return output_files
+
+
+if __name__ == "__main__":
+    result = main()
+```
+
+**実行方法**:
+
+1. 上記スクリプトを一時ファイルとして保存（例: `/tmp/create_pptx.py`）
+2. `IMAGE_DIR`, `OUTPUT_DIR`, `OUTPUT_NAME`, `TITLE` を実際の値に置き換え
+3. 実行:
+
+```bash
+python3 /tmp/create_pptx.py
+```
+
+**最適化パラメータの調整ガイド**:
+
+| パラメータ | デフォルト | 説明 | 調整の目安 |
+|-----------|----------|------|-----------|
+| `JPEG_QUALITY` | 90 | JPEG品質（1-100） | 画質優先: 95 / サイズ優先: 75 |
+| `MAX_IMAGE_WIDTH` | 1920 | 最大幅（px） | 高品質: 2560 / サイズ優先: 1280 |
+| `MAX_IMAGE_HEIGHT` | 1080 | 最大高さ（px） | 高品質: 1440 / サイズ優先: 720 |
+| `MAX_FILE_SIZE_MB` | 80 | 分割閾値（MB） | Google Slides制限100MBに対する安全マージン |
+
+### Step 3: Google Driveにアップロード
+
+生成されたPPTXファイルをrcloneでGoogle Driveにアップロード：
 
 ```bash
 # アップロード先フォルダを作成
-rclone mkdir "gdrive:SlideImages/[プロジェクト名]"
+rclone mkdir "gdrive:Presentations/[プロジェクト名]"
 
-# スライド画像ファイルを一括アップロード
-rclone copy "[ローカル画像ディレクトリ]" "gdrive:SlideImages/[プロジェクト名]" --progress
+# PPTXファイルをアップロード（単一ファイルの場合）
+rclone copy "[PPTXファイルパス]" "gdrive:Presentations/[プロジェクト名]" --progress
+
+# PPTXファイルをアップロード（分割ファイルの場合 - ディレクトリごと）
+rclone copy "[出力ディレクトリ]" "gdrive:Presentations/[プロジェクト名]" --include "*.pptx" --progress
 
 # アップロード結果を確認
-rclone ls "gdrive:SlideImages/[プロジェクト名]"
+rclone ls "gdrive:Presentations/[プロジェクト名]"
 ```
 
-**実行例**:
-```bash
-rclone mkdir "gdrive:SlideImages/project_plan"
-rclone copy "./slides/" "gdrive:SlideImages/project_plan" --progress
-rclone ls "gdrive:SlideImages/project_plan"
+### Step 4: Googleスライドへの変換案内
+
+アップロード完了後、ユーザーに以下を案内する。
+
+#### 単一ファイルの場合
+
+```
+Googleスライドへの変換手順:
+1. Google Drive（https://drive.google.com）を開く
+2.「Presentations/[プロジェクト名]」フォルダに移動
+3. アップロードされたPPTXファイルをダブルクリック
+4. 上部の「Google スライドで開く」をクリック
+   → 自動的にGoogle Slides形式に変換されます
 ```
 
-**出力例**:
+#### 分割ファイルの場合
+
 ```
-  1234567 slide_project_plan_01.png
-  1345678 slide_project_plan_02.png
-  1456789 slide_project_plan_03.png
+⚠️ ファイルサイズが大きいため、複数のPPTXファイルに分割しました。
+各ファイルを個別にGoogleスライドに変換してください。
+
+Googleスライドへの変換手順（各ファイルごと）:
+1. Google Drive（https://drive.google.com）を開く
+2.「Presentations/[プロジェクト名]」フォルダに移動
+3. 各PPTXファイルをダブルクリック → 「Google スライドで開く」
+   - [OUTPUT_NAME]_part1.pptx（スライド 1-N）
+   - [OUTPUT_NAME]_part2.pptx（スライド N+1-M）
+   - ...
 ```
-
-### Step 3: アップロード確認
-
-アップロードが正常に完了したことを確認：
-
-```bash
-# ファイル数と合計サイズを確認
-rclone size "gdrive:SlideImages/[プロジェクト名]"
-```
-
-**出力例**:
-```
-Total objects: 5
-Total size: 12.345 MiB (12944752 Byte)
-```
-
-ローカルのファイル数とGoogle Drive上のファイル数が一致していることを確認する。
-
-### Step 4: GASスクリプトでGoogleスライドを作成
-
-アップロードした画像からGoogleスライドを自動作成するためのGASスクリプトを生成し、ユーザーに実行方法を案内する。
-
-#### GASスクリプト
-
-以下のスクリプトをユーザーに提供する。`FOLDER_NAME` と `PRESENTATION_TITLE` は実際の値に置き換えること。
-
-```javascript
-function createSlideFromImages() {
-  // ===== 設定 =====
-  var FOLDER_NAME = '[プロジェクト名]';           // Google Drive上のフォルダ名
-  var PRESENTATION_TITLE = '[プレゼンテーションタイトル]'; // 作成するスライドのタイトル
-  // ================
-
-  // Google Driveからフォルダを検索
-  var folders = DriveApp.getFoldersByName(FOLDER_NAME);
-  if (!folders.hasNext()) {
-    Logger.log('エラー: フォルダが見つかりません: ' + FOLDER_NAME);
-    return;
-  }
-  var folder = folders.next();
-
-  // 画像ファイルを取得（PNG）
-  var files = folder.getFilesByType('image/png');
-  var imageFiles = [];
-  while (files.hasNext()) {
-    imageFiles.push(files.next());
-  }
-
-  if (imageFiles.length === 0) {
-    Logger.log('エラー: フォルダ内に画像ファイルがありません');
-    return;
-  }
-
-  // ファイル名順にソート（slide_01, slide_02, ... の順番を保持）
-  imageFiles.sort(function(a, b) {
-    return a.getName().localeCompare(b.getName());
-  });
-
-  // プレゼンテーション作成
-  var presentation = SlidesApp.create(PRESENTATION_TITLE);
-  var slides = presentation.getSlides();
-
-  // 最初の空スライドを削除
-  slides[0].remove();
-
-  // 各画像をスライドとして追加
-  imageFiles.forEach(function(file, index) {
-    var slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
-    var blob = file.getBlob();
-    var image = slide.insertImage(blob);
-
-    // 16:9スライド全面に画像を配置（720x405ポイント）
-    image.setLeft(0);
-    image.setTop(0);
-    image.setWidth(720);
-    image.setHeight(405);
-
-    Logger.log('スライド追加 ' + (index + 1) + '/' + imageFiles.length + ': ' + file.getName());
-  });
-
-  var url = presentation.getUrl();
-  Logger.log('===========================');
-  Logger.log('プレゼンテーション作成完了!');
-  Logger.log('スライド数: ' + imageFiles.length + '枚');
-  Logger.log('URL: ' + url);
-  Logger.log('===========================');
-}
-```
-
-#### GASスクリプト実行手順（ユーザーへの案内）
-
-以下の手順をユーザーに案内する：
-
-1. **Google Apps Scriptエディタを開く**
-   - ブラウザで [https://script.google.com](https://script.google.com) にアクセス
-   - 「新しいプロジェクト」をクリック
-
-2. **スクリプトを貼り付ける**
-   - エディタに表示されている `function myFunction() { }` を全て削除
-   - 上記のGASスクリプトを貼り付ける
-   - `FOLDER_NAME` と `PRESENTATION_TITLE` を実際の値に書き換える
-
-3. **スクリプトを実行する**
-   - 上部の「▶ 実行」ボタンをクリック
-   - 初回実行時は権限の承認が必要：
-     - 「権限を確認」をクリック
-     - Googleアカウントを選択
-     - 「詳細」→「（プロジェクト名）（安全ではないページ）に移動」をクリック
-     - 「許可」をクリック
-
-4. **実行結果を確認する**
-   - 下部の「実行ログ」にプレゼンテーションのURLが表示される
-   - URLをクリックして作成されたGoogleスライドを確認
 
 ## 出力形式
 
-### 成功時
+### 成功時（分割なし）
 
 ```
-✅ スライド画像をGoogle Driveにアップロードしました
+✅ PPTXファイルを作成し、Google Driveにアップロードしました
+
+📊 画像最適化結果:
+- 元の画像合計: [X] MB
+- 最適化後合計: [Y] MB（[Z]%削減）
 
 📤 アップロード情報:
-- アップロード先: gdrive:SlideImages/[プロジェクト名]
-- 画像数: [N]枚
-- 合計サイズ: [X] MiB
+- ファイル: [OUTPUT_NAME].pptx（[S] MB）
+- スライド数: [N]枚
+- アップロード先: gdrive:Presentations/[プロジェクト名]
 
-📋 Googleスライド作成手順:
-以下のGASスクリプトを実行してください。
+📋 Googleスライドへの変換手順:
+1. Google Drive（https://drive.google.com）を開く
+2.「Presentations/[プロジェクト名]」フォルダに移動
+3. PPTXファイルをダブルクリック → 「Google スライドで開く」
+```
 
-1. https://script.google.com を開く
-2. 「新しいプロジェクト」を作成
-3. 以下のスクリプトを貼り付けて「▶ 実行」をクリック
+### 成功時（分割あり）
 
-[GASスクリプト（FOLDER_NAMEとPRESENTATION_TITLEを実際の値に置換済み）]
+```
+✅ PPTXファイルを作成し、Google Driveにアップロードしました
+
+📊 画像最適化結果:
+- 元の画像合計: [X] MB
+- 最適化後合計: [Y] MB（[Z]%削減）
+
+⚠️ Google Slides変換制限（100MB）超過のため、[P]パートに分割しました
+
+📤 アップロード情報:
+- [OUTPUT_NAME]_part1.pptx（スライド 1-N, [S1] MB）
+- [OUTPUT_NAME]_part2.pptx（スライド N+1-M, [S2] MB）
+- ...
+- アップロード先: gdrive:Presentations/[プロジェクト名]
+
+📋 Googleスライドへの変換手順:
+1. Google Drive（https://drive.google.com）を開く
+2.「Presentations/[プロジェクト名]」フォルダに移動
+3. 各PPTXファイルをダブルクリック → 「Google スライドで開く」
 ```
 
 ### 失敗時
 
 ```
-❌ アップロードに失敗しました
+❌ 処理に失敗しました
 
 🔍 エラー内容: [エラーメッセージ]
 💡 対処法: [対処方法]
@@ -231,17 +400,25 @@ function createSlideFromImages() {
 
 | エラー | 原因 | 対処 |
 |-------|------|------|
+| `ModuleNotFoundError: No module named 'pptx'` | python-pptx未インストール | `pip3 install python-pptx` |
+| `ModuleNotFoundError: No module named 'PIL'` | Pillow未インストール | `pip3 install Pillow` |
 | `rclone: command not found` | rclone未インストール | `brew install rclone` |
 | `Failed to create file system` | Google Drive未設定 | `rclone config` で設定 |
 | `couldn't find root directory ID` | 認証トークン期限切れ | `rclone config reconnect gdrive:` |
 | `directory not found` | 指定パスが存在しない | `rclone mkdir` でフォルダ作成 |
 | `quota exceeded` | API制限に到達 | 時間をおいて再実行 |
 | `permission denied` | 権限不足 | Google Driveの共有設定を確認 |
+| PPTX生成後も100MB超過 | 画像が非常に大きい/多い | `JPEG_QUALITY` を下げる or `MAX_FILE_SIZE_MB` を調整 |
 
 ### トラブルシューティング
 
 ```bash
-# 接続状態を詳細に確認
+# Python環境の確認
+python3 --version
+python3 -c "import pptx; print(pptx.__version__)"
+python3 -c "from PIL import Image; print('Pillow OK')"
+
+# rclone接続状態を詳細に確認
 rclone about gdrive: -vv
 
 # 設定ファイルの場所を確認
@@ -252,10 +429,20 @@ rclone config file
 rclone config show gdrive
 
 # 再アップロード（差分のみ）
-rclone copy "[ローカルパス]" "gdrive:SlideImages/[プロジェクト名]" --progress
+rclone copy "[ローカルパス]" "gdrive:Presentations/[プロジェクト名]" --progress
 ```
 
 ## 補足: 必要なセットアップ
+
+### Pythonパッケージインストール
+
+```bash
+# python-pptx と Pillow をインストール
+pip3 install python-pptx Pillow
+
+# インストール確認
+python3 -c "import pptx; from PIL import Image; print('All packages OK')"
+```
 
 ### rcloneインストール（macOS - 初回のみ）
 
@@ -330,24 +517,36 @@ brew upgrade rclone
 rclone version
 ```
 
-## クイックリファレンス: rcloneコマンド
+## クイックリファレンス
+
+### Pythonスクリプト実行
+
+```bash
+# PPTX生成（スクリプトを一時ファイルに保存して実行）
+python3 /tmp/create_pptx.py
+```
+
+### rcloneコマンド
 
 ```bash
 # フォルダ作成
-rclone mkdir "gdrive:SlideImages/[プロジェクト名]"
+rclone mkdir "gdrive:Presentations/[プロジェクト名]"
 
 # アップロード（進捗表示付き）
-rclone copy "[ローカルパス]" "gdrive:SlideImages/[プロジェクト名]" --progress
+rclone copy "[ローカルパス]" "gdrive:Presentations/[プロジェクト名]" --progress
+
+# PPTXファイルのみアップロード
+rclone copy "[ローカルパス]" "gdrive:Presentations/[プロジェクト名]" --include "*.pptx" --progress
 
 # ファイル一覧
-rclone ls "gdrive:SlideImages/[プロジェクト名]"
+rclone ls "gdrive:Presentations/[プロジェクト名]"
 
 # ファイルサイズ確認
-rclone size "gdrive:SlideImages/[プロジェクト名]"
+rclone size "gdrive:Presentations/[プロジェクト名]"
 
 # 同期（差分のみアップロード）
-rclone sync "[ローカルパス]" "gdrive:SlideImages/[プロジェクト名]" --progress
+rclone sync "[ローカルパス]" "gdrive:Presentations/[プロジェクト名]" --progress
 
 # 削除
-rclone purge "gdrive:SlideImages/[プロジェクト名]"
+rclone purge "gdrive:Presentations/[プロジェクト名]"
 ```
