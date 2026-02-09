@@ -1,0 +1,32 @@
+---
+description: agents/ や skills/ のファイルを変更した後、~/.cursor/ への同期スクリプト実行をユーザーに確認する
+alwaysApply: true
+---
+
+# ~/.cursor への同期確認ルール
+
+このリポジトリの `agents/` または `skills/` 配下のファイルを追加・変更・削除した場合、
+作業完了報告時に以下の同期スクリプトの実行をユーザーに確認すること。
+
+## 同期スクリプト
+
+```bash
+# agents 同期
+rsync -av --delete /Users/kai.ko/dev/01_active/cursor-agents-skills/agents/ /Users/kai.ko/.cursor/agents/
+
+# skills 同期
+rsync -av --delete /Users/kai.ko/dev/01_active/cursor-agents-skills/skills/ /Users/kai.ko/.cursor/skills/
+```
+
+## 確認フロー
+
+1. `agents/` や `skills/` のファイル変更を完了したら、作業完了報告に以下を含める：
+   - 🔄 `~/.cursor/` への同期が必要です。同期スクリプトを実行しますか？
+2. ユーザーが承認したら、上記の rsync コマンドを実行する
+3. 実行前に必ず `rsync -avn --delete`（dry-run）で差分を確認し、削除されるファイルがあれば報告する
+
+## 注意事項
+
+- `--delete` オプションにより、リポジトリに存在しないファイルは `~/.cursor/` 側から削除される
+- dry-run で削除対象を事前確認し、意図しない削除を防止すること
+- `agents/` `skills/` 以外のファイル変更（README.md、docs/ 等）では同期確認は不要
