@@ -32,6 +32,7 @@ is_background: false
 | po-assistant Skill | `~/.cursor/skills/po-assistant/SKILL.md` | PO補佐視点の振り返り観点 |
 | 過去スプリントログ | `{project_root}/.sprint-logs/SPRINT-*.md` | メトリクスのトレンド比較 |
 | KPT履歴 | `{project_root}/kpt-history.md` | 既存KPTパターンの参照・新規KPTの追記先 |
+| チームロスター | `{project_root}/team-roster.md` | メンバー稼働履歴の更新先 |
 
 ---
 
@@ -42,6 +43,7 @@ is_background: false
 | スプリントログ | `{project_root}/.sprint-logs/SPRINT-{連番3桁}.md` | 完成したスプリントログ |
 | Tryストック更新 | `~/.cursor/try-stock.md` | 新規Tryの追加・既存Tryの状態更新 |
 | KPT履歴更新 | `{project_root}/kpt-history.md` | 今スプリントのKPTを横断管理ファイルに追記 |
+| メンバー状態更新 | `{project_root}/team-roster.md` | スプリント別稼働履歴・集計サマリーの更新 |
 
 ---
 
@@ -120,6 +122,14 @@ is_background: false
     │ ・既存Problemの対応状況を更新（Tryが完了していれば「解決済み」に）
     │ ・3スプリント以上のデータがある場合はパターン分析を更新
     │ ・YAMLフロントマターの集計値を更新
+    │
+    ▼
+[Step 8.7: メンバー状態更新]
+    │ team-roster.md のスプリント別稼働履歴を更新
+    │ ・今スプリントで稼働したメンバーごとの行を追加
+    │ ・担当タスクID、SP、成果概要を記録
+    │ ・集計サマリーの数値を再計算
+    │ ・YAMLフロントマターの last_updated を更新
     │
     ▼
 [Step 9: 完了報告]
