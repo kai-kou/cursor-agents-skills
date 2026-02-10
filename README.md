@@ -5,7 +5,7 @@ project:
   status: active
   priority: medium
   created: "2026-02-05"
-  updated: "2026-02-09"
+  updated: "2026-02-10"
   owner: "kai.ko"
   tags: [cursor, agents, skills, github]
   summary: "CursorのAgents/SkillsをGitHubで管理"
@@ -38,6 +38,7 @@ Cursor の Task ツールで呼び出せるカスタムサブエージェント�
 | `document-review-all.md` | 5つのAIモデルで並列レビューし、修正計画書を作成 |
 | `pre-push-review.md` | Push前にセキュリティ・品質・依存関係をチェック |
 | `slide-generator.md` | ドキュメントから対象ユーザー向けスライド画像を作成 |
+| `requirement-definition.md` | あらゆるプロジェクトの要件定義書をMarkdown形式で作成 |
 
 詳細は [agents/README.md](agents/README.md) を参照してください。
 

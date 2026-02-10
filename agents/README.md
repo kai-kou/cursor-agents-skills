@@ -18,6 +18,7 @@ Cursor IDE用のカスタムエージェント（サブエージェント）集�
 | `project-manager.md` | プロジェクトのライフサイクル管理（作成・タスク・マイルストーン） | 「新規プロジェクト作成」「タスク追加」「ステータス変更」 |
 | `project-analyzer.md` | プロジェクト横断分析・ダッシュボード生成・レポート作成 | 「ダッシュボード更新」「週次レビュー」「今日のタスク」 |
 | `mtg-reporter.md` | MTG進捗報告サマリーの自動生成（定量+定性） | 「MTG報告を作成」「進捗報告」 |
+| `requirement-definition.md` | あらゆるプロジェクトの要件定義書をMarkdown形式で作成 | 「要件定義を作成」「要件をまとめて」 |
 
 ### ドキュメントレビュー・サブエージェント
 
@@ -66,6 +67,21 @@ Cursor IDE用のカスタムエージェント（サブエージェント）集�
 | `generate-dashboard.md` | ダッシュボードジェネレーター | スキャン結果からDASHBOARD.md生成 |
 | `generate-report.md` | レポートジェネレーター | 週次レビュー・進捗分析・棚卸しレポート生成 |
 
+### 要件定義・サブエージェント
+
+`requirement-definition/` ディレクトリに含まれています：
+
+| エージェント | 役割 | 機能 |
+|-------------|------|------|
+| `hearing-facilitator.md` | ヒアリングファシリテーター | 初期情報からヒアリングシート生成・ユーザーとの認識合わせ |
+| `context-analyzer.md` | コンテキスト分析スペシャリスト | プロジェクト文脈分析・フレームワーク選定 |
+| `stakeholder-mapper.md` | ステークホルダー分析スペシャリスト | ステークホルダー特定・利害分析・影響度マトリクス |
+| `scope-definer.md` | スコープ定義スペシャリスト | MECE原則に基づくスコープ定義・In/Out判定 |
+| `risk-constraint-analyzer.md` | リスク・制約分析スペシャリスト | リスク特定・前提検証・対策立案 |
+| `document-composer.md` | ドキュメントアーキテクト | 分析結果統合・要件定義書の構成・執筆 |
+| `humanize-editor.md` | ドキュメント・ヒューマナイザー | AI検出パターン除去・自然な文体への書き換え |
+| `final-integrator.md` | 最終統合スペシャリスト | レビュー結果反映・最終版作成 |
+
 ## 使用方法
 
 ### 前提条件
@@ -98,6 +114,15 @@ Push前にレビューしてください
 
 # スライド作成（フルオプション）
 API設計書.md をエンジニア向けにスライド化してください --google-slides
+
+# 要件定義（ソフトウェア）
+社内の勤怠管理システムを刷新したい。要件定義をまとめてほしい
+
+# 要件定義（制度設計）
+エンジニアの評価制度を新しく作りたい。要件を整理してほしい
+
+# 要件定義（イベント企画）
+来月の社内ハッカソンの企画をまとめたい
 ```
 
 ## ファイル構造
@@ -131,10 +156,19 @@ API設計書.md をエンジニア向けにスライド化してください --g
 │   ├── analyze-document.md
 │   ├── create-slide-outline.md
 │   └── google-slides-creator.md
-└── project-analyzer/            # プロジェクト分析・サブエージェント
-    ├── scan-project.md
-    ├── generate-dashboard.md
-    └── generate-report.md
+├── project-analyzer/            # プロジェクト分析・サブエージェント
+│   ├── scan-project.md
+│   ├── generate-dashboard.md
+│   └── generate-report.md
+└── requirement-definition/      # 要件定義・サブエージェント
+    ├── hearing-facilitator.md
+    ├── context-analyzer.md
+    ├── stakeholder-mapper.md
+    ├── scope-definer.md
+    ├── risk-constraint-analyzer.md
+    ├── document-composer.md
+    ├── humanize-editor.md
+    └── final-integrator.md
 ```
 
 ## ライセンス
