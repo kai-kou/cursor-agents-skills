@@ -141,6 +141,33 @@ curl -s -X POST "https://slack.com/api/chat.postMessage" \
 | `channel_not_found` | チャンネルIDを使用しているか確認 |
 | MCP未利用 | curlフォールバックを試行 |
 
+## サブエージェント起動失敗時のフォールバック
+
+> **背景**: SPRINT-014で、リソース制限によりcursor-times-agentサブエージェントの起動に失敗し、メンバー別Slack投稿が全件スキップされた。以下のフォールバック手順により、サブエージェント非依存でも投稿を実現する。
+
+### フォールバック発動条件
+
+- cursor-times-agentサブエージェント（Task tool）の起動がリソース制限等で失敗した場合
+- サブエージェントがエラーを返した場合
+
+### フォールバック手順（呼び出し元のメインエージェントが実行）
+
+サブエージェントに委譲せず、メインエージェントが直接以下を実行する:
+
+1. **persona読み込み**: `{project_path}/persona/{member_name}.md` を Read ツールで読み込む
+2. **投稿文生成**: 人格設定（名前・口調・投稿スタイルサンプル）に基づいて投稿文を生成
+   - 文字数: 100〜300文字
+   - 形式: Slack mrkdwn
+   - 内容: タスク完了の振り返り（印象に残った1〜2点にフォーカス）
+   - 末尾: persona の `hashtags` + `#member_name`
+3. **Slack投稿**: `slack_post_message` MCPツールで投稿
+   - `channel`: persona内の `default_channel`（チャンネルID）
+   - `message`: 生成した投稿文
+
+### フォールバックでも投稿不可の場合
+
+MCPツール `slack_post_message` も利用できない場合は、投稿をスキップしてレトロスペクティブで「投稿失敗」として記録する。
+
 ## 前提条件
 
 - slack-fast-mcp MCPサーバーが `~/.cursor/mcp.json` に設定済み

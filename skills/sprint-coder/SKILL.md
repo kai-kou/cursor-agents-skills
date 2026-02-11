@@ -94,14 +94,25 @@ sprint-coder は主に **Phase 4: Code（コーディング）** を担当する
     │
     ▼
 [6. Slack分報投稿]（cursor-times-agent連携・必須）
-    │ cursor-times-agentサブエージェントをバックグラウンドで起動
-    │ パラメータ:
-    │   project_path: プロジェクトルートパス
-    │   member_name: sprint-coder（※sprint-backlog.mdの担当カラムに従う）
-    │   session_summary: タスクの実施内容・成果・苦労した点・学び
-    │   post_type: task_complete
     │ ※ persona/{member_name}.md が存在する場合のみ実行
     │ ※ 詳細は cursor-times-agent.mdc Section 1.1 を参照
+    │
+    │ 【Primary】cursor-times-agentサブエージェントをバックグラウンドで起動
+    │   パラメータ:
+    │     project_path: プロジェクトルートパス
+    │     member_name: sprint-coder（※sprint-backlog.mdの担当カラムに従う）
+    │     session_summary: タスクの実施内容・成果・苦労した点・学び
+    │     post_type: task_complete
+    │
+    │ 【Fallback】サブエージェント起動失敗時（リソース制限等）
+    │   メインエージェントが直接以下を実行:
+    │   1. {project_path}/persona/{member_name}.md を読み込む
+    │   2. 人格設定（名前・口調・投稿スタイルサンプル）に基づいて
+    │      タスク完了投稿文を生成（100〜300文字、Slack mrkdwn形式）
+    │   3. slack_post_message MCPツールで投稿
+    │      - channel: persona内の default_channel
+    │      - message: 生成した投稿文（末尾に persona の hashtags + #member_name を含む）
+    │   ※ MCPツールも利用不可の場合はスキップし、レトロスペクティブで記録
     ▼
 タスク完了
 ```
