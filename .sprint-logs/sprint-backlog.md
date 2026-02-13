@@ -1,6 +1,6 @@
 ---
 sprint:
-  id: "SPRINT-003"
+  id: "SPRINT-004"
   project: "cursor-agents-skills"
   date: "2026-02-13"
   status: "completed"
@@ -8,16 +8,16 @@ sprint:
   autonomous: false
 backlog:
   total_tasks: 3
-  total_sp: 10
+  total_sp: 8
   completed_tasks: 3
-  completed_sp: 10
+  completed_sp: 8
   sp_completion_rate: 100
   waves: 0
 ---
 
 # スプリントバックログ
 
-**スプリント**: SPRINT-003
+**スプリント**: SPRINT-004（Sprint B: chat-history-analyzer強化）
 **プロジェクト**: cursor-agents-skills
 **日付**: 2026-02-13
 **ステータス**: completed
@@ -26,7 +26,7 @@ backlog:
 
 ## スプリント目標
 
-> CursorのチャットSQLite履歴を抽出・分析し、プロジェクト固有のSubagent/Skill/Command/Rule提案を自動生成するchat-history-analyzerのMVPを構築する
+> Sprint Aで構築したchat-history-analyzerのMVPを強化し、パターン分析の精度向上・提案テンプレートの実用性改善・SKILL.mdの整備を行い、実運用可能な品質に引き上げる
 
 ---
 
@@ -34,34 +34,34 @@ backlog:
 
 | # | タスクID | タスク名 | SP | 優先度 | 担当 | ステータス | 備考 |
 |---|---------|---------|-----|--------|------|-----------|------|
-| 1 | T013 | workspace_resolver.py + extract_chat_history.py 作成 | 5 | P1 | sprint-coder | ✅ | SQLite BLOB解析含む。抽出の核 |
-| 2 | T014 | chat-history-analyzer Agent定義（オーケストレータ + 3サブAgent） | 3 | P1 | sprint-documenter | ✅ | Agent定義4ファイル |
-| 3 | T015 | /analyze-chat コマンド定義 | 2 | P1 | sprint-documenter | ✅ | コマンドから起動。SKILL.mdも作成 |
+| 1 | T016 | パターン分析強化（pattern-analyzer.md改善） | 3 | P1 | sprint-documenter | ✅ | 定量スコアリング・軸間クロス相関・パターン分類精緻化 |
+| 2 | T017 | 提案テンプレート改善（config-proposer.md改善） | 3 | P1 | sprint-documenter | ✅ | スケルトンテンプレート追加・SP見積もり連携・依存分析 |
+| 3 | T018 | SKILL.md整備（chat-history-analyzer） | 2 | P1 | sprint-documenter | ✅ | 使用例・トラブルシューティング・制限事項の追記 |
 
 ### SP集計
 
 | 項目 | 値 |
 |------|-----|
-| 計画SP合計 | 10 |
-| 完了SP合計 | 10 |
+| 計画SP合計 | 8 |
+| 完了SP合計 | 8 |
 | SP消化率 | 100% |
 | タスク数 | 3 / 3 |
 | 実行モード | 逐次 |
 
 ### 粒度チェック（逐次モード）
 
-- [x] SP合計 ≤ 21（推奨: 5〜13）→ 10 ✅
+- [x] SP合計 ≤ 21（推奨: 5〜13）→ 8 ✅
 - [x] タスク数 ≤ 10（推奨: 3〜7）→ 3 ✅
-- [x] 推定所要時間 ≤ 4時間（推奨: 15分〜2時間）→ 約1.5〜2時間
+- [x] 推定所要時間 ≤ 4時間（推奨: 15分〜2時間）→ 約1〜1.5時間
 
 ---
 
 ## 入力元
 
 - **milestones.md**: M1（リポジトリ構造整備・全Agent/Skill登録）
-- **tasks.md**: Phase 1 タスク T013〜T015（新規追加）
+- **tasks.md**: Phase 1 タスク T016〜T018
+- **前回スプリント**: SPRINT-003（Sprint A）で除外されたタスク群
 - **前回Try**: なし
-- **リサーチ結果**: Cursor SQLite DB構造調査完了。state.vscdb の cursorDiskKV テーブルに composerData/bubbleId として会話データが格納。ワークスペースハッシュは workspaceStorage/<hash>/workspace.json で解決可能
 
 ---
 
@@ -81,17 +81,16 @@ backlog:
 
 ### タスク選定理由
 
-- POからの直接要望: チャット履歴分析によるカスタム設定自動提案機能
-- M1（全Agent/Skill登録）の拡張として、新規Agent/Skill/Commandを追加
-- 2スプリント分割のうち Sprint A（MVP）として基盤構築に集中
+- SPRINT-003（Sprint A）でMVP構築済み。Sprint Bとして品質強化フェーズに入る
+- 3タスクともSprint A計画時に「Sprint Bに分割」として明示的に除外されていたもの
+- M1完了に向けた最終仕上げとしてchat-history-analyzerを実運用品質に引き上げる
 
 ### 除外タスク
 
 | タスクID | 除外理由 |
 |---------|---------|
-| T016（パターン分析強化） | Sprint B に分割。MVP後に実施 |
-| T017（提案テンプレート改善） | Sprint B に分割 |
-| T018（SKILL.md整備） | Sprint B に分割 |
+| T005（要件定義書整備） | Phase 1の最終仕上げ後に着手。P2のため後回し |
+| T101〜（Phase 2） | Phase 1完了後に開始 |
 
 ### Try取り込み判断
 
@@ -99,9 +98,8 @@ backlog:
 
 ### 自己批判結果（Step 5.5）
 
-- Q1（計画の欠点）: BLOBデコード方式が未確定。msgpack/JSON/protobuf等を試行する必要あり
-- Q2（依存関係見落とし）: T014はT013の出力フォーマットに依存。T013を先に完了すべき
-- Q3（SP楽観性）: T013のBLOBデコード部分が不確実。SP 5→8に上振れるリスクあり（PO許容済み）
-- Q4（目標達成可能性）: Sprint AでMVP（抽出→分析→提案の一連動作）は達成可能
-- Q5（メンバー視点の懸念解消）: sprint-coder視点でBLOB解析の技術リスクを認識済み
-- リスク事項: CursorバージョンアップでBLOBフォーマットが変更される可能性
+- Q1（計画の欠点）: 3タスクとも同一担当（sprint-documenter）でボトルネックになる可能性。ただし逐次実行のため問題なし
+- Q2（依存関係見落とし）: T016→T017の順序依存あり。T016のパターン分析強化がT017の提案テンプレートに影響する
+- Q3（SP楽観性）: 全タスクKnown領域で楽観リスクは低い。ただしパターン分析の改善方針で迷う可能性あり
+- Q4（目標達成可能性）: SP 8は逐次モード推奨範囲内。1〜1.5時間で完了見込み
+- Q5（メンバー視点の懸念解消）: sprint-documenter視点で、Agent定義の構造は理解済み。スムーズに進行可能

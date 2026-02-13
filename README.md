@@ -5,7 +5,7 @@ project:
   status: active
   priority: medium
   created: "2026-02-05"
-  updated: "2026-02-12"
+  updated: "2026-02-13"
   owner: "kai.ko"
   tags: [cursor, agents, skills, commands, rules, github]
   summary: "CursorのAgents/Skills/Commands/RulesをGitHubで一元管理"
@@ -41,6 +41,7 @@ Cursor の Task ツールで呼び出せるカスタムサブエージェント�
 | `pre-push-review.md` | Push前にセキュリティ・品質・依存関係をチェック |
 | `slide-generator.md` | ドキュメントから対象ユーザー向けスライド画像を作成 |
 | `requirement-definition.md` | あらゆるプロジェクトの要件定義書をMarkdown形式で作成 |
+| `chat-history-analyzer.md` | チャット履歴を分析しSubagent/Skill/Command/Ruleを自動提案 |
 
 詳細は [agents/README.md](agents/README.md) を参照してください。
 
@@ -50,6 +51,7 @@ Cursor の Agent Skills 機能で自動的に読み込まれるスキル定義�
 
 | スキル | 説明 | トリガー例 |
 |--------|------|-----------|
+| `chat-history-analyzer` | チャット履歴分析・カスタム設定自動提案 | 「チャット分析」「設定を提案」 |
 | `infographic-generator` | グラレコ風インフォグラフィック生成 | 「インフォグラフィックを作成」 |
 
 > **Note**: 一部のスキル（社内機密情報を含む可能性があるもの）は `.gitignore` で除外されています。
@@ -72,6 +74,7 @@ Cursor のスラッシュコマンド（`/` で呼び出し）の定義です。
 | **レポート・分析** | `mtg-report` | MTG進捗報告サマリーを生成 |
 | | `weekly-review` | 週次レビューを実行 |
 | | `analyze` | プロジェクト分析を実行 |
+| | `analyze-chat` | チャット履歴を分析して設定を提案 |
 | | `dashboard` | ダッシュボードを生成 |
 | | `today` | 今日対応すべきタスクを抽出 |
 | | `team-status` | チーム状態を確認 |

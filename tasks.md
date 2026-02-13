@@ -1,16 +1,16 @@
 ---
 tasks:
-  total: 22
-  completed: 14
+  total: 25
+  completed: 17
   in_progress: 0
   blocked: 0
-  overall_progress: 64
+  overall_progress: 68
 ---
 
 # タスク管理
 
 **プロジェクト**: Cursor Agents/Skills GitHub管理（cursor-agents-skills）
-**最終更新**: 2026-02-13 (SPRINT-003)
+**最終更新**: 2026-02-13 (SPRINT-004)
 
 ---
 
@@ -34,10 +34,10 @@ tasks:
 
 ## 進捗サマリー
 
-**全体**: 14/22 タスク完了 (64%)
+**全体**: 17/25 タスク完了 (68%)
 
 ### フェーズ別進捗
-- Phase 1（リポジトリ整備）: 14/15 完了 (93%)
+- Phase 1（リポジトリ整備）: 17/18 完了 (94%)
 - Phase 2（ドキュメント整備）: 0/4 完了 (0%)
 - Phase 3（自動化・CI）: 0/3 完了 (0%)
 
@@ -64,6 +64,9 @@ tasks:
 | T013 | workspace_resolver.py + extract_chat_history.py 作成 | P1 | ✅ | 02/13 | SPRINT-003 SP5 |
 | T014 | chat-history-analyzer Agent定義（オーケストレータ + 3サブAgent） | P1 | ✅ | 02/13 | SPRINT-003 SP3 |
 | T015 | /analyze-chat コマンド定義 | P1 | ✅ | 02/13 | SPRINT-003 SP2 |
+| T016 | パターン分析強化（pattern-analyzer.md改善） | P1 | ✅ | 02/13 | SPRINT-004 SP3 |
+| T017 | 提案テンプレート改善（config-proposer.md改善） | P1 | ✅ | 02/13 | SPRINT-004 SP3 |
+| T018 | SKILL.md整備（chat-history-analyzer） | P1 | ✅ | 02/13 | SPRINT-004 SP2 |
 
 ---
 
@@ -96,9 +99,9 @@ tasks:
 
 | ID | タスク | 優先度 | 期限 |
 |----|--------|--------|------|
-| T013 | workspace_resolver.py + extract_chat_history.py 作成 | P1 | 02/14 |
-| T014 | chat-history-analyzer Agent定義 | P1 | 02/14 |
-| T015 | /analyze-chat コマンド定義 | P1 | 02/14 |
+| T016 | パターン分析強化（pattern-analyzer.md改善） | P1 | 02/14 |
+| T017 | 提案テンプレート改善（config-proposer.md改善） | P1 | 02/14 |
+| T018 | SKILL.md整備（chat-history-analyzer） | P1 | 02/14 |
 
 ---
 
