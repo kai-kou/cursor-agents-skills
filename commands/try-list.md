@@ -60,7 +60,7 @@ Tryストックの一覧を表示してください。
 1. 「TRY-xxx を着手に変更」→ In Progress に移動
 2. 「TRY-xxx を完了に」→ Completed に移動（効果を記録）
 3. 「棚卸しして」→ 陳腐化したTryの棚卸し実施
-4. 「High のTryをタスク化して」→ tasks.md への登録を検討
+4. 「High のTryをタスク化して」→ scrum/tasks.md への登録を検討
 ```
 
 ---

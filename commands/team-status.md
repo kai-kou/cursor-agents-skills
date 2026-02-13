@@ -2,9 +2,9 @@
 
 以下の情報を統合して、チームロスターの状態を一覧表示してください:
 
-1. `{project_root}/team-roster.md` からメンバー一覧・ペルソナ情報を読み取る
+1. `{project_root}/scrum/team-roster.md` からメンバー一覧・ペルソナ情報を読み取る
 2. `{project_root}/.sprint-logs/sprint-backlog.md` から現在のスプリント稼働状況を読み取る
-3. `{project_root}/tasks.md` から各メンバーの担当タスク状況を読み取る
+3. `{project_root}/scrum/tasks.md` から各メンバーの担当タスク状況を読み取る
 
 ### 表示フォーマット
 
@@ -25,6 +25,6 @@
 ```
 
 ### 注意事項
-- team-roster.mdが存在しない場合は「チームロスターが未作成です」と表示
+- scrum/team-roster.mdが存在しない場合は「チームロスターが未作成です」と表示
 - スプリントが実行中でない場合は「現在スプリントは実行されていません」と表示
 - 各メンバーのステータスは、現在のスプリントで担当タスクがあれば Active、なければ Idle

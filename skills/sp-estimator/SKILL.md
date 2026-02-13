@@ -209,7 +209,7 @@ description: タスクのストーリーポイント（SP）見積もりを実�
 |--------|-----------|------|
 | sprint-master | プランニング時 | タスクのSP見積もり実行・結果報告 |
 | po-assistant | プランニング時 | 見積もり結果を踏まえたバックログ組成の支援 |
-| sprint-master | リファインメント時 | product-backlog.mdのアイテムのSP粗見積もり |
+| sprint-master | リファインメント時 | scrum/product-backlog.mdのアイテムのSP粗見積もり |
 | sprint-master | レトロスペクティブ時 | 見積もり精度の振り返りデータ提供 |
 
 ## 参照ファイル
@@ -217,6 +217,6 @@ description: タスクのストーリーポイント（SP）見積もりを実�
 | ファイル | 用途 | パス |
 |--------|------|------|
 | story-point-guide.mdc | SP基準・4軸評価・パターン | `~/.cursor/rules/story-point-guide.mdc` |
-| tasks.md | タスク一覧・過去見積もり | `{project_root}/tasks.md` |
+| scrum/tasks.md | タスク一覧・過去見積もり | `{project_root}/scrum/tasks.md` |
 | sprint-backlog.md | 現スプリントのSP計画 | `{project_root}/.sprint-logs/sprint-backlog.md` |
 | スプリントログ | 過去SP実績 | `{project_root}/.sprint-logs/SPRINT-*.md` |

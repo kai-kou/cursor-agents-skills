@@ -51,7 +51,7 @@ description: スプリント内のテスト生成・検証を担当するSkill�
     │ 変更されたファイル一覧の確認
     │ 変更内容の理解（新規追加 / 修正 / 削除）
     │ プロジェクトタイプの判定（Markdown系 / コード系 / 混合）
-    │ テスト戦略の選定
+    │ テスト戦略の選定（{project_root}/scrum/test-strategy.md があれば参照）
     │
     ▼
 [2. テスト計画の策定]
@@ -146,8 +146,8 @@ AI Scrum Frameworkのようなドキュメント中心プロジェクト向け�
 
 | # | テスト項目 | チェック方法 |
 |---|----------|------------|
-| A-7 | tasks.md のフェーズ別集計値 | ✅タスク数を手動カウントし、集計値と比較 |
-| A-8 | milestones.md の進捗率 | 完了条件のチェック状態と進捗率の一致 |
+| A-7 | scrum/tasks.md のフェーズ別集計値 | ✅タスク数を手動カウントし、集計値と比較 |
+| A-8 | scrum/milestones.md の進捗率 | 完了条件のチェック状態と進捗率の一致 |
 | A-9 | sprint-backlog.md のSP集計 | 完了タスクのSP合計と集計値の一致 |
 | A-10 | try-stock.md の件数集計 | Pending/Completed/Cancelled の件数カウント |
 
@@ -158,7 +158,7 @@ AI Scrum Frameworkのようなドキュメント中心プロジェクト向け�
 | A-11 | YAML frontmatterの妥当性 | 必須フィールド（name, description）の存在 |
 | A-12 | セクション構造の完備性 | 必須セクション（役割、責務、ワークフロー、品質基準）の存在 |
 | A-13 | 連携先の参照有効性 | 連携先として記載されたSkill/Agentのファイル実在確認 |
-| A-14 | team-roster.md との整合性 | 新Skill追加時にteam-rosterに登録されているか |
+| A-14 | scrum/team-roster.md との整合性 | 新Skill追加時にteam-rosterに登録されているか |
 
 ### Type B: コード系プロジェクト（JavaScript/TypeScript/Python等）
 
@@ -304,6 +304,7 @@ Type A + Type B のテストを、ファイル種別に応じて使い分ける�
 | ファイル | 用途 | パス | 必須 |
 |--------|------|------|------|
 | sprint-workflow.mdc | Flower 5段階モデル・PGTRループ定義 | `{project_root}/.cursor/rules/sprint-workflow.mdc` | Yes |
+| test-strategy.md | プロジェクト固有テスト戦略定義 | `{project_root}/scrum/test-strategy.md` | No |
 | regression-prevention.mdc | Stage 1チェック項目（テスト基準の参照） | `~/.cursor/rules/regression-prevention.mdc` | No |
 | regression-guard.md | テスト提案の連携先定義 | `~/.cursor/agents/regression-guard.md` | No |
 | sprint-coder SKILL.md | PGTRループとの連携定義 | `~/.cursor/skills/sprint-coder/SKILL.md` | Yes |

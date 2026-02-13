@@ -5,7 +5,7 @@
 以下の情報を集約して表示してください:
 
 1. `{project_root}/.sprint-logs/sprint-backlog.md` を読み取る
-2. `{project_root}/tasks.md` から該当タスクの最新ステータスを読み取る
+2. `{project_root}/scrum/tasks.md` から該当タスクの最新ステータスを読み取る
 
 ### 表示フォーマット
 

@@ -22,7 +22,7 @@ description: スプリント内のドキュメント作成・更新を担当す�
 | Rule作成 | .mdcルールファイルの作成・更新を行う |
 | README作成 | プロジェクトのREADMEやquickstart-guideを作成する |
 | ログ記録補助 | スプリントログの構造・フォーマットが正しいことを確認する |
-| 既存ドキュメント更新 | tasks.md、milestones.md等の管理ドキュメントを更新する |
+| 既存ドキュメント更新 | scrum/tasks.md、scrum/milestones.md等の管理ドキュメントを更新する |
 | 変更ファイル記録 | 変更したファイルのパスと変更内容の概要をスクラムマスターに報告する |
 
 ### やらないこと
@@ -71,14 +71,21 @@ description: スプリント内のドキュメント作成・更新を担当す�
     │ ※ persona/{member_name}.md が存在する場合のみ実行
     │ ※ 詳細は cursor-times-agent.mdc Section 1.1 を参照
     │
-    │ 【Primary】cursor-times-agentサブエージェントをバックグラウンドで起動
+    │ ★ 独立リトライ原則（SPRINT-026 TRY-054対応）:
+    │   各タスクの投稿は前タスクの投稿結果に一切依存しない。
+    │   前タスクで投稿失敗しても、本タスクでは必ず Step 6a から再試行する。
+    │
+    │ [Step 6a: サブエージェント投稿]（Primary）
+    │   cursor-times-agentサブエージェントをバックグラウンドで起動
     │   パラメータ:
     │     project_path: プロジェクトルートパス
     │     member_name: sprint-documenter（※sprint-backlog.mdの担当カラムに従う）
     │     session_summary: タスクの実施内容・成果・苦労した点・学び
     │     post_type: task_complete
+    │   → 成功: 投稿結果を「✅ サブエージェント」として記録 → タスク完了
+    │   → 失敗: Step 6b へ
     │
-    │ 【Fallback】サブエージェント起動失敗時（リソース制限等）
+    │ [Step 6b: MCP直接投稿]（Fallback 1）
     │   メインエージェントが直接以下を実行:
     │   1. {project_path}/persona/{member_name}.md を読み込む
     │   2. 人格設定（名前・口調・投稿スタイルサンプル）に基づいて
@@ -86,7 +93,24 @@ description: スプリント内のドキュメント作成・更新を担当す�
     │   3. slack_post_message MCPツールで投稿
     │      - channel: persona内の default_channel
     │      - message: 生成した投稿文（末尾に persona の hashtags + #member_name を含む）
-    │   ※ MCPツールも利用不可の場合はスキップし、レトロスペクティブで記録
+    │   → 成功: 投稿結果を「✅ MCP直接」として記録 → タスク完了
+    │   → 失敗: Step 6c へ
+    │
+    │ [Step 6c: チャット内投稿文記録]（Fallback 2・最終手段）
+    │   投稿手段がすべて利用不可の場合:
+    │   1. persona/{member_name}.md を読み込み投稿文を生成する
+    │   2. 生成した投稿文をチャット内に以下のフォーマットで出力する:
+    │      📝 【Slack投稿代替記録】
+    │      👤 メンバー: {member_name}
+    │      💬 投稿文: {生成した投稿文}
+    │      ⚠️ 投稿手段: サブエージェント ❌ → MCP ❌ → チャット内記録
+    │   3. 投稿結果を「⚠️ チャット内記録」として記録
+    │   ※ この投稿文はPOが手動でSlackに貼り付けることも、後日一括投稿することも可能
+    │
+    │ ★ 投稿結果記録（必須）:
+    │   投稿の成否に関わらず、以下をスプリントログ用に保持する:
+    │   - タスクID / 担当Skill / 投稿結果（✅ or ⚠️ or ❌）/ 投稿手段
+    │   この記録はレビューの「仕様遵守チェック」で検証される
     ▼
 タスク完了
 ```
@@ -173,39 +197,3 @@ description: スプリント内のドキュメント作成・更新を担当す�
 - ドキュメントの自動生成機能は含まない
 - 多言語対応は含まない（日本語のみ）
 - ドキュメント間の自動リンクチェックは含まない
-
----
-
-## サブエージェントモード（並列実行時）
-
-> **背景**: SPRINT-020/021で導入。Wave並列実行時にsprint-documenterがサブエージェント（Task tool経由）として起動される場合の追加制約。
-
-### サブエージェントとして起動される条件
-
-sprint-masterが並列モード（Waveベース）でタスクを実行する場合、各タスクはTask toolのサブエージェントとして起動される。この場合、sprint-documenterは**独立したコンテキスト**で動作し、メインエージェントとの直接通信はできない。
-
-### 追加制約（通常モードの全品質基準に加えて）
-
-1. **禁止ファイル**: 以下のファイルは**絶対に編集してはならない**（メインエージェントのWave Syncで一括更新する）:
-   - `tasks.md`
-   - `sprint-backlog.md`（`.sprint-logs/sprint-backlog.md`）
-   - `milestones.md`
-   - `kpt-history.md`
-   - `team-roster.md`
-   - `product-backlog.md`
-
-2. **成果物のみ操作**: タスクで指定された成果物ファイルのみ作成・編集する
-
-3. **Slack投稿なし**: サブエージェントモードではSlack分報投稿は行わない（メインエージェントがバッチ投稿する）
-
-### 完了報告フォーマット
-
-サブエージェントとして完了時は、最終メッセージで以下を報告する:
-
-```
-- status: success | partial | failed
-- changed_files: [変更したファイルのフルパス一覧]
-- summary: 変更内容の要約（100字以内）
-- issues: 発生した問題（あれば。なければ「なし」）
-- design_decisions: 設計判断の記録（あれば。なければ「なし」）
-```
