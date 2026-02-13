@@ -11,15 +11,6 @@ is_background: false
 
 スプリントの実行プロセスを多角的に振り返り、Keep（継続）・Problem（課題）・Try（改善案）を整理する。Tryを具体的なアクションとしてtry-stock.mdに登録し、スプリントログを最終化して保存する。
 
-## 実行モード
-
-sprint-masterから委譲時に**実行モード**（通常 / 自律）が指定される。
-
-| モード | PO関与 | Try判断 | ログ保存 |
-|--------|--------|---------|---------|
-| **通常モード**（デフォルト） | KPT+Try提示→PO確認→即座実施判断 | POが判断 | PO確認後に保存 |
-| **自律実行モード** | なし（Slack通知のみ） | 自動登録（定型基準で優先度付与） | 自動保存 |
-
 ## 前提
 
 - **PO**: 唯一の人間ユーザー。Tryの即座実施判断権限を持つ
@@ -33,15 +24,16 @@ sprint-masterから委譲時に**実行モード**（通常 / 自律）が指定
 | ファイル | パス | 用途 |
 |---------|------|------|
 | スプリントバックログ | `{project_root}/.sprint-logs/sprint-backlog.md` | 計画と実績の比較 |
-| タスク管理 | `{project_root}/tasks.md` | タスク完了状態・備考 |
+| タスク管理 | `{project_root}/scrum/tasks.md` | タスク完了状態・備考 |
 | Tryストック | `~/.cursor/try-stock.md` | 既存Tryの確認・新規Try追加 |
 | スプリントログテンプレート | `~/.cursor/templates/sprint-log.md` | 最終ログの生成 |
 | sprint-coder Skill | `~/.cursor/skills/sprint-coder/SKILL.md` | コーダー視点の振り返り観点 |
 | sprint-documenter Skill | `~/.cursor/skills/sprint-documenter/SKILL.md` | ドキュメンテーション視点の振り返り観点 |
 | po-assistant Skill | `~/.cursor/skills/po-assistant/SKILL.md` | PO補佐視点の振り返り観点 |
-| 過去スプリントログ | `{project_root}/.sprint-logs/SPRINT-*.md` | メトリクスのトレンド比較 |
-| KPT履歴 | `{project_root}/kpt-history.md` | 既存KPTパターンの参照・新規KPTの追記先 |
-| チームロスター | `{project_root}/team-roster.md` | メンバー稼働履歴の更新先 |
+| 過去スプリントログ | `{project_root}/.sprint-logs/SPRINT-*.md` | メトリクスのトレンド比較・SP精度トレンド |
+| SP見積もりガイド | `~/.cursor/rules/story-point-guide.mdc` | SP精度追跡フレームワーク（Section 5）参照 |
+| KPT履歴 | `{project_root}/scrum/kpt-history.md` | 既存KPTパターンの参照・新規KPTの追記先 |
+| チームロスター | `{project_root}/scrum/team-roster.md` | メンバー稼働履歴の更新先 |
 
 ---
 
@@ -50,9 +42,10 @@ sprint-masterから委譲時に**実行モード**（通常 / 自律）が指定
 | 成果物 | パス | 内容 |
 |--------|------|------|
 | スプリントログ | `{project_root}/.sprint-logs/SPRINT-{連番3桁}.md` | 完成したスプリントログ |
+| バックログアーカイブ | `{project_root}/.sprint-logs/sprint-backlog-SPRINT-{ID}.md` | プランニング判断根拠を含むバックログの歴史的記録 |
 | Tryストック更新 | `~/.cursor/try-stock.md` | 新規Tryの追加・既存Tryの状態更新 |
-| KPT履歴更新 | `{project_root}/kpt-history.md` | 今スプリントのKPTを横断管理ファイルに追記 |
-| メンバー状態更新 | `{project_root}/team-roster.md` | スプリント別稼働履歴・集計サマリーの更新 |
+| KPT履歴更新 | `{project_root}/scrum/kpt-history.md` | 今スプリントのKPTを横断管理ファイルに追記 |
+| メンバー状態更新 | `{project_root}/scrum/team-roster.md` | スプリント別稼働履歴・集計サマリーの更新 |
 
 ---
 
@@ -64,7 +57,7 @@ sprint-masterから委譲時に**実行モード**（通常 / 自律）が指定
     ▼
 [Step 1: データ収集]
     │ sprint-backlog.md → 計画タスク・完了タスク・SP消化率
-    │ tasks.md → 各タスクの完了備考・変更点
+    │ scrum/tasks.md → 各タスクの完了備考・変更点
     │ スプリント実行中の特記事項（スコープ変更・ブロッカー等）
     │ try-stock.md → 今スプリントで取り込んだTryの成果
     │
@@ -101,6 +94,34 @@ sprint-masterから委譲時に**実行モード**（通常 / 自律）が指定
     │ デグレ発生: あり/なし
     │
     ▼
+[Step 5.5: SP精度振り返り]
+    │ ※ story-point-guide.mdc Section 5 に準拠
+    │
+    │ (1) タスク別SP精度評価:
+    │   各タスクについて以下を評価する
+    │   ・見積もりSP（プランニング時の値）
+    │   ・実感SP（実際にやってみてのSP再評価、フィボナッチ値）
+    │   ・乖離（実感SP − 見積もりSP）
+    │   ・乖離理由（乖離がある場合、具体的に記述）
+    │
+    │ (2) SP精度サマリー計算:
+    │   ・SP一致率 = 見積もりSP = 実感SP のタスク数 / 全タスク数 × 100
+    │   ・見積もり正確度 = 乖離±1段階以内のタスク数 / 全タスク数 × 100
+    │   ・過大見積もり率 = 見積もりSP > 実感SP のタスク数 / 全タスク数 × 100
+    │   ・過小見積もり率 = 見積もりSP < 実感SP のタスク数 / 全タスク数 × 100
+    │
+    │ (3) 乖離が大きいタスク（±2段階以上）の原因分析:
+    │   ・4軸評価のどの軸で見誤ったかを特定
+    │   ・Problemとして記録するか判断
+    │
+    │ (4) キャリブレーショントリガーチェック:
+    │   ・SP一致率が70%未満か → 緊急キャリブレーション要
+    │   ・5スプリント蓄積に達したか → 定期キャリブレーション要
+    │   ・特定パターンで3回連続乖離か → パターン別キャリブレーション要
+    │
+    │ (5) sprint-log.md のSP精度記録セクションに結果を記録
+    │
+    ▼
 [Step 6: PO共有・確認]
     │ KPT + メンバー視点 + Try + メトリクスをPOに提示
     │ POからの追加コメント・修正を反映
@@ -124,7 +145,7 @@ sprint-masterから委譲時に**実行モード**（通常 / 自律）が指定
     │
     ▼
 [Step 8.5: KPT履歴集約]
-    │ kpt-history.md に今スプリントのKPTを追記
+    │ scrum/kpt-history.md に今スプリントのKPTを追記
     │ ・Keep一覧テーブルに行追加（カテゴリ分類付き）
     │ ・Problem一覧テーブルに行追加（対応状況・対応Try付き）
     │ ・Try一覧テーブルに行追加（ステータス付き）
@@ -134,11 +155,30 @@ sprint-masterから委譲時に**実行モード**（通常 / 自律）が指定
     │
     ▼
 [Step 8.7: メンバー状態更新]
-    │ team-roster.md のスプリント別稼働履歴を更新
+    │ scrum/team-roster.md のスプリント別稼働履歴を更新
     │ ・今スプリントで稼働したメンバーごとの行を追加
     │ ・担当タスクID、SP、成果概要を記録
     │ ・集計サマリーの数値を再計算
     │ ・YAMLフロントマターの last_updated を更新
+    │
+    ▼
+[Step 8.8: sprint-backlog.md ステータス更新] ★ SPRINT-026追加
+    │ .sprint-logs/sprint-backlog.md のステータスを completed に更新する
+    │ ・YAMLフロントマター: status: "completed"
+    │ ・本文: **ステータス**: completed
+    │ ※ sprint-planner が in_progress に設定し、sprint-retro が completed に更新する
+    │ ※ この更新を忘れるとステータスが in_progress のまま残る（SPRINT-025で発生）
+    │
+    ▼
+[Step 8.9: sprint-backlog.md アーカイブ保存] ★ SPRINT-027追加
+    │ sprint-backlog.md をスプリントID付きファイル名でアーカイブコピーする
+    │ ・コピー元: {project_root}/.sprint-logs/sprint-backlog.md
+    │ ・コピー先: {project_root}/.sprint-logs/sprint-backlog-SPRINT-{ID}.md
+    │ ・{ID} はStep 8.8でステータス更新済みのsprint-backlog.mdのYAMLフロントマター sprint.id から取得
+    │ ※ Step 8.8 でステータスを completed に更新した後にアーカイブする
+    │ ※ これにより、次スプリントのプランニングで sprint-backlog.md が上書きされても
+    │   プランニング判断根拠・バックログ構成・スコープ変更記録が保持される
+    │ ※ アーカイブファイルはスプリントログ（SPRINT-{ID}.md）の補完資料として機能する
     │
     ▼
 [Step 9: 完了報告]
@@ -163,10 +203,11 @@ sprint-masterから委譲時に**実行モード**（通常 / 自律）が指定
 ### Problem（問題点）の観点
 
 - 手戻りや修正が発生した箇所はなかったか
-- 見積もりと実績に大きな乖離はなかったか
+- 見積もりと実績に大きな乖離はなかったか（※SP精度振り返り Step 5.5 の結果を参照）
 - ブロッカーやスコープ変更はあったか
 - 品質上の問題は見つかったか
 - プロセス上の非効率はなかったか
+- SP精度が低下傾向にないか（キャリブレーショントリガーに該当しないか）
 
 ### Try（改善案）の原則
 
@@ -279,6 +320,7 @@ SP消化率 = 完了SP / 計画SP × 100
 | 3. スコープ変更 | sprint-backlog.mdのスコープ変更記録 |
 | 4. レビュー | sprint-review-runnerの出力 |
 | 5. レトロスペクティブ | 本Step 2〜5の結果 |
+| 5.5 SP精度記録 | Step 5.5のSP精度振り返り結果 |
 | 6. メトリクス | Step 5の計算結果 |
 
 ### 3. 「使い方」セクションの除去
@@ -342,86 +384,3 @@ team:
 - Try登録後のtry-stock.mdのYAMLフロントマター集計値を必ず更新する
 - スプリントログは**セッション終了前に必ず保存**する。中断リスクに備える
 - メンバー視点は**スプリントで実際に稼働したSkillの視点のみ**記述する（未使用Skillは省略）
-
----
-
-## 自律実行モード ワークフロー
-
-> **背景**: SPRINT-020/021で導入。POのリアルタイム不在時でもKPT振り返りとTry蓄積を自動化する。
-
-自律実行モードでは、通常モードのStep 6（PO共有・確認）を**自動判断**に置き換える。
-
-```
-[Step 1〜5: 通常モードと同一]
-    │ データ収集 → KPT整理 → メンバー視点集約 → Try具体化 → メトリクス計算
-    │
-    ▼
-[Step 6-AUTO: Try自動登録] ★ 自律モード専用
-    │ POの即座実施判断を待たず、以下の基準で自動登録:
-    │
-    │ (a) Try優先度の自動判定基準:
-    │   - High: 同一Problemが2スプリント以上連続で発生している場合
-    │   - High: デグレーションが発生した場合のfix Try
-    │   - Medium: 新規Problem由来のTry（デフォルト）
-    │   - Low: 改善提案だが緊急性なし
-    │
-    │ (b) 即座実施の自動判定:
-    │   - SP 1以下 + Process/Template対象 + 既知パターン → 自動実施
-    │   - それ以外 → try-stock.md に Pending 登録
-    │
-    │ (c) 即座実施した場合:
-    │   - 変更内容をスプリントログに記録
-    │   - try-stock.md に Completed として登録
-    │
-    ▼
-[Step 7: Try登録] ← 通常モードと同一（try-stock.md更新）
-    │
-    ▼
-[Step 8: スプリントログ最終化] ← 通常モードと同一
-    │ ★ 追加: execution_mode / parallel_mode / autonomous_decisions をYAMLに記録
-    │
-    ▼
-[Step 8.5: KPT履歴集約] ← 通常モードと同一
-    │
-    ▼
-[Step 8.7: メンバー状態更新] ← 通常モードと同一
-    │
-    ▼
-[Step 9-AUTO: Slack完了通知] ★ 自律モード専用
-    │ スプリント全体のサマリーをSlack投稿:
-    │
-    │ 🏁 SPRINT-{ID} が自律実行で完了しました
-    │ 📊 SP: {完了SP}/{計画SP} ({消化率}%)
-    │ 📁 変更: {ファイル数}件
-    │ ⚡ 実行モード: {逐次/並列（Wave N段）}
-    │ 🔄 KPT: Keep {N}件 / Problem {N}件 / Try {N}件（登録済み）
-    │
-    │ レビュー結果・レトロKPTは SPRINT-{ID}.md に記録済みです。
-    │ フィードバックがあればチャットでお知らせください。
-    │ 問題なければ「cp」でコミット&pushします。
-    │
-    ▼
-レトロスペクティブ完了 → sprint-masterに制御を返す
-```
-
-### 自律モードのガードレール
-
-自律レトロでも以下は**常に遵守**する:
-
-1. **KPT整理・メンバー視点集約は省略不可**（振り返りの質を維持）
-2. **High優先度Tryは1スプリントあたり最大2件**（通常モードと同一制限）
-3. **即座実施の自動判定はSP 1以下に限定**（SP 2以上はPending登録のみ）
-4. **コミット&pushは自律モードでも実行しない**（PO事後レビュー後）
-5. **スプリントログは必ず保存**（省略不可）
-
-### 自律モードのメトリクス追加
-
-YAMLフロントマターに以下を追記:
-
-```yaml
-execution_mode: "autonomous"  # or "normal"
-parallel_mode: true           # or false
-waves: 3                      # Wave数（並列時。逐次時は0）
-autonomous_decisions: 2       # 自律判断回数（Try即座実施等）
-po_review_status: "pending"   # pending / approved / feedback
-```
