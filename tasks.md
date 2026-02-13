@@ -1,16 +1,16 @@
 ---
 tasks:
-  total: 16
-  completed: 8
+  total: 19
+  completed: 11
   in_progress: 0
   blocked: 0
-  overall_progress: 50
+  overall_progress: 58
 ---
 
 # タスク管理
 
 **プロジェクト**: Cursor Agents/Skills GitHub管理（cursor-agents-skills）
-**最終更新**: 2026-02-12
+**最終更新**: 2026-02-13
 
 ---
 
@@ -34,10 +34,10 @@ tasks:
 
 ## 進捗サマリー
 
-**全体**: 8/16 タスク完了 (50%)
+**全体**: 11/19 タスク完了 (58%)
 
 ### フェーズ別進捗
-- Phase 1（リポジトリ整備）: 8/9 完了 (89%)
+- Phase 1（リポジトリ整備）: 11/12 完了 (92%)
 - Phase 2（ドキュメント整備）: 0/4 完了 (0%)
 - Phase 3（自動化・CI）: 0/3 完了 (0%)
 
@@ -58,6 +58,9 @@ tasks:
 | T007 | rules/ ディレクトリ作成 & グローバルルール登録 | P1 | ✅ | 02/12 | SPRINT-001 |
 | T008 | sync-to-cursor-home.mdc 同期対象拡張 | P1 | ✅ | 02/12 | SPRINT-001 |
 | T009 | README.md Commands/Rules セクション追加 | P1 | ✅ | 02/12 | SPRINT-001 |
+| T010 | persona/ 最新メンバー定義の追加 | P1 | ✅ | 02/13 | SPRINT-002 |
+| T011 | slide-generator.md のサブフォルダ方式改修 | P1 | ✅ | 02/13 | SPRINT-002 |
+| T012 | google-slides-creator.md のサブフォルダ対応 | P1 | ✅ | 02/13 | SPRINT-002 |
 
 ---
 
@@ -90,7 +93,9 @@ tasks:
 
 | ID | タスク | 優先度 | 期限 |
 |----|--------|--------|------|
-| T005 | 要件定義書の整備 | P2 | 02/21 |
+| T010 | persona/ 最新メンバー定義の追加 | P1 | 02/13 |
+| T011 | slide-generator.md のサブフォルダ方式改修 | P1 | 02/13 |
+| T012 | google-slides-creator.md のサブフォルダ対応 | P1 | 02/13 |
 
 ---
 

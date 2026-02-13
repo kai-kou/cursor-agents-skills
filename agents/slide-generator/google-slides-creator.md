@@ -42,7 +42,7 @@ pip3 install python-pptx Pillow
 - `images`: 生成された画像ファイルのパスリスト
 - `title`: スライドのタイトル
 - `output_name`: 作成するスライドの名前
-- `image_dir`: 画像ファイルのディレクトリパス
+- `image_dir`: 画像ファイルのディレクトリパス（`slides/[ドキュメント名]/` 形式のサブフォルダ）
 
 ## ワークフロー
 
@@ -98,7 +98,7 @@ from pptx.util import Inches, Emu
 from PIL import Image
 
 # ===== 設定 =====
-IMAGE_DIR = '[画像ディレクトリパス]'
+IMAGE_DIR = '[画像ディレクトリパス]'  # 例: '/path/to/output/slides/プロジェクト計画書'
 OUTPUT_DIR = '[出力先ディレクトリパス]'
 OUTPUT_NAME = '[出力ファイル名（拡張子なし）]'
 TITLE = '[プレゼンテーションタイトル]'
