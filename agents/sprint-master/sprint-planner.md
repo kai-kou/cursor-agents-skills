@@ -19,6 +19,46 @@ scrum/milestones.md・scrum/tasks.md・scrum/product-backlog.md・try-stock.md�
 
 ---
 
+## プランニング実行モード
+
+> **導入**: SPRINT-033 (PBI-017+018)。プランニングフェーズのコンテキストウィンドウ（CW）消費を最適化する。
+
+プランニングには2つの実行モードがある。sprint-masterはプランニング開始時にモードを選択する。
+
+### モード一覧
+
+| モード | 説明 | CW消費（メインセッション） | 適用条件 |
+|--------|------|-------------------------|---------|
+| **従来モード** | メインエージェントがStep 0〜8を逐次実行 | 高（83-166K tokens推定） | Tier Lかつ委譲不要な場合 |
+| **委譲モード** | Step 0〜6をTask toolサブエージェントに委譲し、Step 7-8をメインで実行 | 低（15-30K tokens推定） | デフォルト（Tier S/Mで自動有効） |
+
+### モード判定ロジック
+
+```
+プランニング開始
+    │
+    ▼
+[モデルティア判定]
+    │
+    ├── Tier S（CW ≤ 32K）→ 委譲モード【必須】
+    ├── Tier M（CW 32K-200K）→ 委譲モード【推奨・デフォルト】
+    └── Tier L（CW ≥ 200K）→ 従来モード【デフォルト】
+         └── POが「委譲で」と指定 → 委譲モードに切替可
+    │
+    ▼
+選択されたモードでプランニング実行
+```
+
+### POオーバーライド
+
+- POが「委譲モードで」と明示 → ティアに関わらず委譲モード
+- POが「従来モードで」と明示 → ティアに関わらず従来モード
+- 委譲モードでサブエージェント起動失敗 → 従来モードにフォールバック
+
+> 委譲モードの詳細は「## サブエージェント委譲モード（CW最適化）」セクションを参照。
+
+---
+
 ## 入力ファイル
 
 | ファイル | パス | 用途 |
@@ -43,6 +83,12 @@ scrum/milestones.md・scrum/tasks.md・scrum/product-backlog.md・try-stock.md�
 
 ```
 プランニング開始（sprint-masterから委譲）
+    │
+    ▼
+[モード判定] ★ NEW (SPRINT-033)
+    │ モデルティアを判定し、実行モードを選択する。
+    │ → 委譲モード: 「サブエージェント委譲モード」セクションへ遷移（Step 0〜6を委譲）
+    │ → 従来モード: 以下の Step 0〜8 を逐次実行
     │
     ▼
 [Step 0: 環境プリフライトチェック] ★ NEW (SPRINT-029)
@@ -465,3 +511,231 @@ scrum/milestones.md・scrum/tasks.md・scrum/product-backlog.md・try-stock.md�
 - Try取り込みは通常モードでは必ずPOに明示して判断を仰ぐ（勝手に含めない / 勝手に除外しない）。自律実行モードでは優先度HighのTryを自動取り込み可
 - スプリント分割が必要な場合は、分割案と各スプリントの目標をセットで提案する
 - **成果物の配置先確認**（TRY-001由来）: 各タスクの成果物パスが明確かDoR基準で再確認する
+- **委譲モード時**: サブエージェントの返却結果の妥当性をメインエージェントが検証してからPOに提示すること
+
+---
+
+## サブエージェント委譲モード（CW最適化）
+
+> **導入**: SPRINT-033 (PBI-017+018)
+> **設計書**: docs/analysis/planning-context-optimization.md
+> **目的**: プランニング分析フェーズ（Step 0〜6）をTask toolサブエージェントに委譲し、メインセッションのCW消費を約82%削減する
+
+### 概要
+
+委譲モードでは、プランニングの分析フェーズ全体を1回のTask tool呼び出しで実行する。サブエージェントは独立したCW内で全分析を実行し、構造化された結果をメインエージェントに返却する。メインエージェントはその結果を使ってPO承認取得（Step 7）とsprint-backlog.md生成（Step 8）を行う。
+
+### 委譲モードワークフロー
+
+```
+プランニング開始（sprint-masterから委譲）
+    │
+    ▼
+[モード判定] → 委譲モード選択
+    │
+    ▼
+[D-1: サブエージェント起動]
+    │ Task tool で「プランニング分析サブエージェント」を起動
+    │ プロンプト: 下記「サブエージェントプロンプトテンプレート」に従って生成
+    │ model: 指定なし（親エージェントのモデルを継承）
+    │ subagent_type: generalPurpose
+    │
+    │ ★ 起動失敗時: 従来モード（Step 0〜8）にフォールバック
+    │   POに「委譲モード起動失敗。従来モードで続行します」と通知
+    │
+    ▼
+[D-2: 結果受領・バリデーション]
+    │ サブエージェントの返却結果を受け取る
+    │ 以下を検証:
+    │   - プリフライトレポートが含まれているか
+    │   - Criticalエラーがないか（あればプランニング停止）
+    │   - バックログ案が粒度ガイドラインに収まっているか
+    │   - SP合計・タスク数が妥当か
+    │
+    │ ★ バリデーション失敗時:
+    │   → 軽微: メインエージェントで補正してStep 7へ
+    │   → 致命的: 従来モードにフォールバック
+    │
+    ▼
+[Step 7: PO承認取得]（従来モードと同じ）
+    │ サブエージェントの結果をPO提示フォーマットに整形して提示
+    │ POの承認/修正指示を処理
+    │ ※ 自律実行モードの場合は自動承認ゲート（Step 7a）を適用
+    │
+    ▼
+[Step 8: sprint-backlog.md 生成]（従来モードと同じ）
+    │ テンプレートから生成
+    │ YAMLフロントマターに planning_delegation: true を記録
+    │
+    ▼
+プランニング完了 → sprint-masterに制御を返す
+```
+
+### サブエージェントプロンプトテンプレート
+
+sprint-masterがTask toolを呼び出す際に使用するプロンプト:
+
+````
+あなたはスプリントプランニング分析エージェントです。
+以下のプロジェクト情報に基づいて、スプリントプランニングの分析（Step 0〜6）を実行してください。
+
+## POのリクエスト
+{po_request}
+
+## 実行モード
+{execution_mode: sequential | parallel | autonomous}
+
+## プロジェクト情報
+- project_root: {project_root}
+- 前回スプリントID: {previous_sprint_id}
+
+## あなたが実行するStep
+
+### Step 0: プリフライトチェック
+以下のファイルを読み込み、5項目のチェックを実施してください:
+- {project_root}/scrum/milestones.md
+- {project_root}/scrum/tasks.md
+- {project_root}/scrum/product-backlog.md
+- {project_root}/scrum/team-roster.md
+- {project_root}/scrum/kpt-history.md
+- ~/.cursor/try-stock.md
+- {project_root}/persona/ ディレクトリ
+
+チェック項目:
+1. スプリント状態: {project_root}/.sprint-logs/sprint-backlog.md のstatus確認
+2. 必須ドキュメント: 上記6ファイルの存在確認
+3. Persona定義: persona/ディレクトリとメンバーファイルの存在確認
+4. Slack MCP接続: persona内のdefault_channelでslack_get_history疎通確認
+5. YAML整合性: milestones.md/tasks.md/product-backlog.mdの集計値検証
+
+### Step 1: リファインメント要否判断
+product-backlog.mdの未精緻アイテム数とtasks.mdの精緻済み未着手タスク数を確認。
+
+### Step 2: データ収集・分析
+- milestones.md → 進行中マイルストーンの期限・進捗率
+- tasks.md → 未着手タスク（⬜）を全件抽出
+- try-stock.md → 優先度HighのPending Tryを抽出
+- .sprint-logs/SPRINT-*.md → 直近3スプリントのベロシティ
+- バックログ健全度チェック（Layer 1/Layer 2/次Sprint候補）
+- try-stock棚卸しトリガーチェック（Pending > 20件 or 10スプリント経過）
+
+### Step 3: 候補タスク抽出
+依存関係フィルタリング → 優先度ソート → マイルストーン期限考慮 → Try取り込み判断
+
+### Step 4: SP見積もり
+~/.cursor/rules/story-point-guide.mdc を参照してSP見積もり。
+tasks.mdに既にSP見積もりがあればそれを使用。
+
+### Step 5: バックログ組成
+粒度ガイドライン:
+- 逐次: SP推奨5〜13（上限21）、タスク数3〜7（上限10）
+- 並列: SP推奨13〜21（上限34）、タスク数5〜12（上限16）
+担当Skill割り当て（sprint-coder / sprint-documenter）
+
+### Step 5.3: メンバー視点集約
+以下のSkill定義を読み込み、各視点からフィードバックを収集:
+- ~/.cursor/skills/sprint-coder/SKILL.md
+- ~/.cursor/skills/sprint-documenter/SKILL.md
+- ~/.cursor/skills/sprint-researcher/SKILL.md
+- ~/.cursor/skills/sprint-mentor/SKILL.md
+- ~/.cursor/skills/po-assistant/SKILL.md
+- ~/.cursor/skills/sp-estimator/SKILL.md
+スキップ条件: SP合計 ≤ 5 かつ全タスク定型的
+
+### Step 5.5: 自己批判
+Q1〜Q5の自己批判を実施。
+
+### Step 6: スプリント目標策定
+選定タスク群の共通テーマを1〜2文で表現。
+
+## 出力フォーマット（必ずこの構造で返却してください）
+
+### 1. プリフライトレポート
+| # | チェック項目 | 結果 | 詳細 |
+|---|------------|------|------|
+| 0-1 | スプリント状態 | ✅/❌ | ... |
+| 0-2 | 必須ドキュメント | ✅/❌ | ... |
+| 0-3 | Persona定義 | ✅/⚠️ | ... |
+| 0-4 | Slack MCP接続 | ✅/⚠️ | ... |
+| 0-5 | YAML整合性 | ✅/⚠️ | ... |
+判定: ALL_PASS / CRITICAL_FAIL / WARNING_ONLY
+
+### 2. スプリントID
+{project_root}/.sprint-logs/SPRINT-*.md をスキャンし、既存最大番号+1で採番。
+next_sprint_id: SPRINT-{NNN}
+
+### 3. リファインメント結果（実施した場合のみ）
+| タスクID | タスク名 | SP | 優先度 | マイルストーン | 説明 |
+
+### 4. バックログ案
+sprint_goal: "..."
+execution_mode: sequential / parallel
+
+| # | タスクID | タスク名 | SP | 優先度 | 担当 | 変更予定ファイル | 備考 |
+
+total_sp: N
+total_tasks: N
+estimated_duration: "..."
+
+### 5. SP集計・粒度チェック
+- SP合計: N ≤ 21 → ✅/❌
+- タスク数: N ≤ 10 → ✅/❌
+- 推定所要時間: ... ≤ 4時間 → ✅/❌
+
+### 6. 選定理由
+- 各タスクの選定根拠
+
+### 7. 除外タスク
+| タスクID | 除外理由 |
+
+### 8. Try取り込み判断
+- 取り込んだTry / 見送ったTry とその理由
+- 優先度HighのPending件数
+
+### 9. バックログ健全度レポート
+| 層 | 残量 | 閾値 | 状態 |
+
+### 10. ベロシティ参照
+- 直近3スプリントの実績
+
+### 11. メンバー視点サマリー
+| Skill視点 | 合意 | 懸念 | 提案 |
+
+### 12. 自己批判結果
+- Q1〜Q5の回答
+- リスク事項
+
+### 13. MCP接続状態（Step 0の結果から）
+- Slack投稿可否と対応方針
+````
+
+### サブエージェント結果のバリデーション
+
+メインエージェントは返却結果に対して以下を検証する:
+
+| # | チェック | 失敗時のアクション |
+|---|---------|-----------------|
+| 1 | プリフライトレポートの存在 | 従来モードにフォールバック |
+| 2 | Criticalエラーの有無 | プランニング停止。POに報告 |
+| 3 | バックログ案のSP合計が粒度ガイドライン内 | メインで補正（タスク削除）してStep 7へ |
+| 4 | 全タスクにタスクID・SP・担当が割り当てられている | メインで補完してStep 7へ |
+| 5 | スプリントIDが既存と重複しない | メインで再採番してStep 7へ |
+
+### sprint-backlog.md への記録
+
+委譲モードで実行した場合、sprint-backlog.md のYAMLフロントマターに以下を記録する:
+
+```yaml
+sprint:
+  # ... 既存フィールド ...
+  model_tier: "S | M | L"           # モデルティア判定結果
+  planning_delegation: true          # 委譲モードで実行
+```
+
+### 制約・注意事項
+
+- サブエージェントは**ファイルの読み込みのみ**を行い、scrum管理ファイルへの書き込みは行わない
+- sprint-backlog.md の生成はメインエージェント（Step 8）で行う
+- milestones.md / tasks.md / product-backlog.md の更新もメインエージェントが行う
+- サブエージェントがリファインメントを実施した場合、新規タスクの登録はメインエージェントが行う
+- 従来モードとの互換性: 委譲モードの出力はPO提示フォーマット（既存）と互換性を持つ
